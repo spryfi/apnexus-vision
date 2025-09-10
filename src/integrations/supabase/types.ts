@@ -1887,8 +1887,10 @@ export type Database = {
           deductions: number | null
           employee_id: string
           gross_pay: number
+          hourly_rate: number | null
           hours_worked: number | null
           id: string
+          is_salary: boolean | null
           net_pay: number | null
           notes: string | null
           overtime_hours: number | null
@@ -1896,16 +1898,23 @@ export type Database = {
           pay_date: string | null
           pay_period_end: string
           pay_period_start: string
+          regular_hours: number | null
           total_gross_pay: number
           updated_at: string
+          week_end_date: string | null
+          week_number: number | null
+          week_start_date: string | null
+          year: number | null
         }
         Insert: {
           created_at?: string
           deductions?: number | null
           employee_id: string
           gross_pay: number
+          hourly_rate?: number | null
           hours_worked?: number | null
           id?: string
+          is_salary?: boolean | null
           net_pay?: number | null
           notes?: string | null
           overtime_hours?: number | null
@@ -1913,16 +1922,23 @@ export type Database = {
           pay_date?: string | null
           pay_period_end: string
           pay_period_start: string
+          regular_hours?: number | null
           total_gross_pay: number
           updated_at?: string
+          week_end_date?: string | null
+          week_number?: number | null
+          week_start_date?: string | null
+          year?: number | null
         }
         Update: {
           created_at?: string
           deductions?: number | null
           employee_id?: string
           gross_pay?: number
+          hourly_rate?: number | null
           hours_worked?: number | null
           id?: string
+          is_salary?: boolean | null
           net_pay?: number | null
           notes?: string | null
           overtime_hours?: number | null
@@ -1930,8 +1946,13 @@ export type Database = {
           pay_date?: string | null
           pay_period_end?: string
           pay_period_start?: string
+          regular_hours?: number | null
           total_gross_pay?: number
           updated_at?: string
+          week_end_date?: string | null
+          week_number?: number | null
+          week_start_date?: string | null
+          year?: number | null
         }
         Relationships: [
           {
