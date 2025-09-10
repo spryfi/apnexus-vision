@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Shield, Settings, Receipt, Users, LogOut, Fuel, DollarSign, UserCheck } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import TaskStatusCards from "@/components/TaskStatusCards";
 
 const navigation = [
   { name: "AP-Fortress", href: "/", icon: Shield },
@@ -59,6 +60,15 @@ function AppSidebar() {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Task Status</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="px-2">
+              <TaskStatusCards />
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
         
