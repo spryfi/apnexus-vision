@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CheckCircle, AlertTriangle, BarChart3, Settings, Eye, ThumbsUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionDetailDialog } from "@/components/TransactionDetailDialog";
+import CardManagement from "@/components/CardManagement";
+import TaskDashboard from "@/components/TaskDashboard";
 
 interface Transaction {
   id: string;
@@ -328,16 +330,50 @@ export default function AdminHub() {
 
         {/* Management Tab */}
         <TabsContent value="management">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Vendor, employee, and category management coming soon...
-              </p>
-            </CardContent>
-          </Card>
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  System Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="cards" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="cards">Company Cards</TabsTrigger>
+                    <TabsTrigger value="tasks">Task Dashboard</TabsTrigger>
+                    <TabsTrigger value="vendors">Vendors</TabsTrigger>
+                    <TabsTrigger value="staff">Staff</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="cards">
+                    <CardManagement />
+                  </TabsContent>
+                  
+                  <TabsContent value="tasks">
+                    <TaskDashboard />
+                  </TabsContent>
+                  
+                  <TabsContent value="vendors">
+                    <Card>
+                      <CardContent className="p-6">
+                        <p className="text-muted-foreground">Vendor management coming soon...</p>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                  
+                  <TabsContent value="staff">
+                    <Card>
+                      <CardContent className="p-6">
+                        <p className="text-muted-foreground">Staff management coming soon...</p>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

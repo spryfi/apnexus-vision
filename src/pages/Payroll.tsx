@@ -321,19 +321,7 @@ export default function Payroll() {
         </h1>
       </div>
 
-      <Tabs defaultValue="tasks" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="tasks">Task Dashboard</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll Processing</TabsTrigger>
-          <TabsTrigger value="cards">Company Cards</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="tasks" className="space-y-6">
-          <TaskDashboard />
-        </TabsContent>
-        
-        <TabsContent value="payroll" className="space-y-6">
-          <div className="space-y-6">
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -650,13 +638,7 @@ export default function Payroll() {
           </form>
         </DialogContent>
       </Dialog>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="cards" className="space-y-6">
-          <CardManagement />
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 }
