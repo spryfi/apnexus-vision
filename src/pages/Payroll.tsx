@@ -9,8 +9,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Calendar, DollarSign, Clock, Users } from "lucide-react";
 import TaskDashboard from "@/components/TaskDashboard";
+import CardManagement from "@/components/CardManagement";
 import { useToast } from "@/hooks/use-toast";
 
 interface PayrollRecord {
@@ -312,11 +314,26 @@ export default function Payroll() {
 
   return (
     <div className="space-y-6">
-      {/* Task Dashboard */}
-      <TaskDashboard />
-      
-      {/* Payroll Management Section */}
-      <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+          <DollarSign className="h-8 w-8" />
+          Payroll Management
+        </h1>
+      </div>
+
+      <Tabs defaultValue="tasks" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="tasks">Task Dashboard</TabsTrigger>
+          <TabsTrigger value="payroll">Payroll Processing</TabsTrigger>
+          <TabsTrigger value="cards">Company Cards</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="tasks" className="space-y-6">
+          <TaskDashboard />
+        </TabsContent>
+        
+        <TabsContent value="payroll" className="space-y-6">
+          <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -633,7 +650,13 @@ export default function Payroll() {
           </form>
         </DialogContent>
       </Dialog>
-      </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="cards" className="space-y-6">
+          <CardManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

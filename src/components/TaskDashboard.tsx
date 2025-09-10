@@ -272,181 +272,237 @@ const TaskDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid grid-cols-12 gap-6">
+      {/* Left Column - Task Cards */}
+      <div className="col-span-4 space-y-4">
+        {/* Weekly Tasks Card */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-              <p className="text-sm font-medium">Weekly Tasks</p>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Calendar className="h-5 w-5" />
+              Weekly Tasks
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Progress value={weeklyCompletionRate} className="flex-1" />
+              <span className="text-sm text-muted-foreground">
+                {weeklyCompletionRate}%
+              </span>
             </div>
-            <div className="text-2xl font-bold">{weeklyTasks.length}</div>
-            <Progress value={weeklyCompletionRate} className="mt-2" />
-            <p className="text-xs text-muted-foreground mt-1">
-              {weeklyCompletionRate}% complete
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-              <p className="text-sm font-medium">Monthly Tasks</p>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="text-2xl font-bold">{monthlyTasks.length}</div>
-            <Progress value={monthlyCompletionRate} className="mt-2" />
-            <p className="text-xs text-muted-foreground mt-1">
-              {monthlyCompletionRate}% complete
-            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {weeklyTasks.map((task) => {
+              const IconComponent = getTaskIcon(task.task_templates.category);
+              return (
+                <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <IconComponent className="h-6 w-6 text-primary" />
+                    <div>
+                      <h5 className="font-medium text-sm">{task.task_templates.name}</h5>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(task.period_start), 'MMM dd')} - {format(new Date(task.period_end), 'MMM dd')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(task.status, task.validation_result)}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleTaskAction(task)}
+                      disabled={task.status === 'validated'}
+                    >
+                      {task.status === 'pending' ? 'Start' : task.status === 'validated' ? 'Done' : 'Continue'}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+            {weeklyTasks.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No weekly tasks found
+              </p>
+            )}
           </CardContent>
         </Card>
 
+        {/* Monthly Tasks Card */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-              <p className="text-sm font-medium">AI Validated</p>
-              <Bot className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TrendingUp className="h-5 w-5" />
+              Monthly Tasks
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Progress value={monthlyCompletionRate} className="flex-1" />
+              <span className="text-sm text-muted-foreground">
+                {monthlyCompletionRate}%
+              </span>
             </div>
-            <div className="text-2xl font-bold">
-              {[...weeklyTasks, ...monthlyTasks].filter(t => t.status === 'validated').length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-              <p className="text-sm font-medium">Needs Attention</p>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="text-2xl font-bold">
-              {[...weeklyTasks, ...monthlyTasks].filter(t => 
-                t.status === 'pending' || (t.validation_result?.passed === false)
-              ).length}
-            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {monthlyTasks.map((task) => {
+              const IconComponent = getTaskIcon(task.task_templates.category);
+              return (
+                <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <IconComponent className="h-6 w-6 text-primary" />
+                    <div>
+                      <h5 className="font-medium text-sm">{task.task_templates.name}</h5>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(task.period_start), 'MMM dd')} - {format(new Date(task.period_end), 'MMM dd')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(task.status, task.validation_result)}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleTaskAction(task)}
+                      disabled={task.status === 'validated'}
+                    >
+                      {task.status === 'pending' ? 'Start' : task.status === 'validated' ? 'Done' : 'Continue'}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+            {monthlyTasks.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No monthly tasks found
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Weekly Tasks */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Weekly Tasks - Previous Week
-          </CardTitle>
-          <CardDescription>
-            Tasks that need to be completed for the previous work week
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {weeklyTasks.map((task) => {
-              const IconComponent = getTaskIcon(task.task_templates.category);
-              return (
-                <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <IconComponent className="h-8 w-8 text-primary" />
-                    <div>
-                      <h4 className="font-medium">{task.task_templates.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {task.task_templates.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(task.period_start), 'MMM dd')} - {format(new Date(task.period_end), 'MMM dd, yyyy')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(task.status, task.validation_result)}
-                    {getStatusBadge(task.status, task.validation_result)}
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleTaskAction(task)}
-                        disabled={task.status === 'validated'}
-                      >
-                        {task.status === 'pending' ? 'Start' : 'Continue'}
-                      </Button>
-                      {task.status === 'completed' && !task.validation_result && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => validateTask(task)}
-                        >
-                          <Bot className="h-4 w-4 mr-1" />
-                          Validate
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Right Column - Summary Stats and Details */}
+      <div className="col-span-8 space-y-6">
+        {/* Summary Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <p className="text-sm font-medium">Total Tasks</p>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-bold">{weeklyTasks.length + monthlyTasks.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {weeklyTasks.length} weekly, {monthlyTasks.length} monthly
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <p className="text-sm font-medium">AI Validated</p>
+                <Bot className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-bold">
+                {[...weeklyTasks, ...monthlyTasks].filter(t => t.status === 'validated').length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Automatically verified
+              </p>
+            </CardContent>
+          </Card>
 
-      {/* Monthly Tasks */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Monthly Tasks - Previous Month
-          </CardTitle>
-          <CardDescription>
-            Tasks that need to be completed for the previous month
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {monthlyTasks.map((task) => {
-              const IconComponent = getTaskIcon(task.task_templates.category);
-              return (
-                <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <IconComponent className="h-8 w-8 text-primary" />
-                    <div>
-                      <h4 className="font-medium">{task.task_templates.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {task.task_templates.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(task.period_start), 'MMM dd')} - {format(new Date(task.period_end), 'MMM dd, yyyy')}
-                      </p>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <p className="text-sm font-medium">Needs Attention</p>
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-bold">
+                {[...weeklyTasks, ...monthlyTasks].filter(t => 
+                  t.status === 'pending' || (t.validation_result?.passed === false)
+                ).length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Requires review
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <p className="text-sm font-medium">Completion Rate</p>
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-bold">
+                {Math.round(((weeklyCompletionRate + monthlyCompletionRate) / 2))}%
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Overall progress
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Task Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Task Details & Validation</CardTitle>
+            <CardDescription>
+              Review task progress and validation results
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[...weeklyTasks, ...monthlyTasks].map((task) => {
+                const IconComponent = getTaskIcon(task.task_templates.category);
+                return (
+                  <div key={task.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <IconComponent className="h-8 w-8 text-primary" />
+                      <div>
+                        <h4 className="font-medium">{task.task_templates.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {task.task_templates.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(task.period_start), 'MMM dd')} - {format(new Date(task.period_end), 'MMM dd, yyyy')}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(task.status, task.validation_result)}
-                    {getStatusBadge(task.status, task.validation_result)}
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleTaskAction(task)}
-                        disabled={task.status === 'validated'}
-                      >
-                        {task.status === 'pending' ? 'Start' : 'Continue'}
-                      </Button>
-                      {task.status === 'completed' && !task.validation_result && (
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(task.status, task.validation_result)}
+                      {getStatusBadge(task.status, task.validation_result)}
+                      <div className="flex gap-2">
                         <Button 
                           size="sm" 
-                          variant="outline"
-                          onClick={() => validateTask(task)}
+                          onClick={() => handleTaskAction(task)}
+                          disabled={task.status === 'validated'}
                         >
-                          <Bot className="h-4 w-4 mr-1" />
-                          Validate
+                          {task.status === 'pending' ? 'Start' : 'Continue'}
                         </Button>
-                      )}
+                        {task.status === 'completed' && !task.validation_result && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => validateTask(task)}
+                          >
+                            <Bot className="h-4 w-4 mr-1" />
+                            Validate
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
+                );
+              })}
+              
+              {[...weeklyTasks, ...monthlyTasks].length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No tasks found. Tasks will appear here based on the current period.
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

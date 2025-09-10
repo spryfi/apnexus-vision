@@ -555,6 +555,59 @@ export type Database = {
         }
         Relationships: []
       }
+      company_cards: {
+        Row: {
+          assigned_to: string | null
+          card_brand: string
+          card_type: string
+          cardholder_name: string
+          created_at: string | null
+          driver_number: string | null
+          first_four: string
+          id: string
+          is_active: boolean | null
+          last_four: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          card_brand: string
+          card_type: string
+          cardholder_name: string
+          created_at?: string | null
+          driver_number?: string | null
+          first_four: string
+          id?: string
+          is_active?: boolean | null
+          last_four: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          card_brand?: string
+          card_type?: string
+          cardholder_name?: string
+          created_at?: string | null
+          driver_number?: string | null
+          first_four?: string
+          id?: string
+          is_active?: boolean | null
+          last_four?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_cards_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_credits: {
         Row: {
           amount: number
