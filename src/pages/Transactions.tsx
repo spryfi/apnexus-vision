@@ -40,10 +40,10 @@ export default function Transactions() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [filters, setFilters] = useState({
-    status: '',
+    status: 'all',
     vendor: '',
     employee: '',
-    paymentMethod: '',
+    paymentMethod: 'all',
     search: ''
   });
   const { toast } = useToast();
@@ -85,7 +85,7 @@ export default function Transactions() {
   const applyFilters = () => {
     let filtered = transactions;
 
-    if (filters.status) {
+    if (filters.status && filters.status !== 'all') {
       filtered = filtered.filter(t => t.status === filters.status);
     }
     if (filters.vendor) {
@@ -98,7 +98,7 @@ export default function Transactions() {
         t.employees?.employee_name.toLowerCase().includes(filters.employee.toLowerCase())
       );
     }
-    if (filters.paymentMethod) {
+    if (filters.paymentMethod && filters.paymentMethod !== 'all') {
       filtered = filtered.filter(t => t.payment_method === filters.paymentMethod);
     }
     if (filters.search) {
@@ -114,10 +114,10 @@ export default function Transactions() {
 
   const clearFilters = () => {
     setFilters({
-      status: '',
+      status: 'all',
       vendor: '',
       employee: '',
-      paymentMethod: '',
+      paymentMethod: 'all',
       search: ''
     });
   };
@@ -211,7 +211,7 @@ export default function Transactions() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="Pending Approval">Pending Approval</SelectItem>
                   <SelectItem value="Approved for Payment">Approved for Payment</SelectItem>
                   <SelectItem value="Paid">Paid</SelectItem>
@@ -242,7 +242,7 @@ export default function Transactions() {
                   <SelectValue placeholder="All methods" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All methods</SelectItem>
+                  <SelectItem value="all">All methods</SelectItem>
                   <SelectItem value="Credit Card">Credit Card</SelectItem>
                   <SelectItem value="ACH">ACH</SelectItem>
                   <SelectItem value="Check">Check</SelectItem>
