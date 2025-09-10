@@ -63,34 +63,40 @@ const TaskDashboard = () => {
       const currentMonthStart = startOfMonth(subMonths(now, 1)); // Previous month
       const currentMonthEnd = endOfMonth(subMonths(now, 1));
 
-      // Fetch weekly tasks
+      // Create missing task completions first
+      await createMissingTasks(currentWeekStart, currentWeekEnd, currentMonthStart, currentMonthEnd);
+
+      // Fetch weekly tasks with proper filtering
       const { data: weeklyData, error: weeklyError } = await supabase
         .from('task_completions')
         .select(`
           *,
-          task_templates (*)
+          task_templates!inner (*)
         `)
         .eq('task_templates.task_type', 'weekly')
         .gte('period_start', format(currentWeekStart, 'yyyy-MM-dd'))
         .lte('period_end', format(currentWeekEnd, 'yyyy-MM-dd'));
 
-      if (weeklyError) throw weeklyError;
+      if (weeklyError) {
+        console.error('Weekly tasks error:', weeklyError);
+        throw weeklyError;
+      }
 
-      // Fetch monthly tasks
+      // Fetch monthly tasks with proper filtering
       const { data: monthlyData, error: monthlyError } = await supabase
         .from('task_completions')
         .select(`
           *,
-          task_templates (*)
+          task_templates!inner (*)
         `)
         .eq('task_templates.task_type', 'monthly')
         .gte('period_start', format(currentMonthStart, 'yyyy-MM-dd'))
         .lte('period_end', format(currentMonthEnd, 'yyyy-MM-dd'));
 
-      if (monthlyError) throw monthlyError;
-
-      // Create missing task completions if needed
-      await createMissingTasks(currentWeekStart, currentWeekEnd, currentMonthStart, currentMonthEnd);
+      if (monthlyError) {
+        console.error('Monthly tasks error:', monthlyError);
+        throw monthlyError;
+      }
       
       setWeeklyTasks(weeklyData || []);
       setMonthlyTasks(monthlyData || []);
