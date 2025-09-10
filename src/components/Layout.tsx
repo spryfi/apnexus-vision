@@ -17,6 +17,7 @@ const navigation = [
   { name: "Fuel Tracking", href: "/fuel", icon: Fuel },
   { name: "Staff", href: "/staff", icon: UserCheck },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 interface LayoutProps {

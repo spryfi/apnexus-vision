@@ -330,50 +330,25 @@ export default function AdminHub() {
 
         {/* Management Tab */}
         <TabsContent value="management">
-          <div className="grid gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  System Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="cards" className="space-y-4">
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="cards">Company Cards</TabsTrigger>
-                    <TabsTrigger value="tasks">Task Dashboard</TabsTrigger>
-                    <TabsTrigger value="vendors">Vendors</TabsTrigger>
-                    <TabsTrigger value="staff">Staff</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="cards">
-                    <CardManagement />
-                  </TabsContent>
-                  
-                  <TabsContent value="tasks">
-                    <TaskDashboard />
-                  </TabsContent>
-                  
-                  <TabsContent value="vendors">
-                    <Card>
-                      <CardContent className="p-6">
-                        <p className="text-muted-foreground">Vendor management coming soon...</p>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                  
-                  <TabsContent value="staff">
-                    <Card>
-                      <CardContent className="p-6">
-                        <p className="text-muted-foreground">Staff management coming soon...</p>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Admin System Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-2">Advanced admin tools coming soon</p>
+                <p className="text-sm text-muted-foreground">
+                  For general settings like Company Cards and Task Dashboard, 
+                  <br />
+                  please use the Settings page in the main navigation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
