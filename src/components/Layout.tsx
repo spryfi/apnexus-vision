@@ -152,7 +152,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
         <main className="flex-1 overflow-auto">
-          <div className="w-full max-w-sm mx-auto px-4 py-6">
+          <div className="w-full px-4 py-6">
             {children}
           </div>
         </main>
