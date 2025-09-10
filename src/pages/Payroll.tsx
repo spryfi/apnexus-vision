@@ -314,17 +314,20 @@ export default function Payroll() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <DollarSign className="h-8 w-8" />
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <DollarSign className="h-6 w-6" />
+          <h1 className="text-2xl font-bold tracking-tight">
             Weekly Payroll Management
           </h1>
-          <p className="text-muted-foreground">
-            Track weekly hours and pay for all employees
-          </p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)} disabled={!selectedWeek}>
+        <p className="text-muted-foreground text-sm">
+          Track weekly hours and pay for all employees
+        </p>
+      </div>
+      
+      <div className="flex justify-center">
+        <Button onClick={() => setShowAddDialog(true)} disabled={!selectedWeek} className="w-full max-w-xs">
           <Plus className="h-4 w-4 mr-2" />
           Add Pay Record
         </Button>
