@@ -12,7 +12,17 @@ import Vendors from "@/pages/Vendors";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+console.log("QueryClient created:", queryClient);
+console.log("React:", React);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
