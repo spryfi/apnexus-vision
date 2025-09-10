@@ -97,9 +97,10 @@ export default function Payroll() {
     
     setWeekOptions(weeks);
     
-    // Set current week as default
+    // Set previous week as default (for payroll processing)
     const currentWeek = getCurrentWeekNumber(now);
-    const defaultWeek = weeks.find(w => w.week === currentWeek);
+    const previousWeek = currentWeek > 1 ? currentWeek - 1 : 52; // Handle year transition
+    const defaultWeek = weeks.find(w => w.week === previousWeek);
     if (defaultWeek) {
       setSelectedWeek(defaultWeek);
     }
