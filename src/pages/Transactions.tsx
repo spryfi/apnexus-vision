@@ -182,7 +182,7 @@ export default function Transactions() {
         </div>
         <Button onClick={() => setShowAddDialog(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Transaction
+          Pay a Bill
         </Button>
       </div>
 
