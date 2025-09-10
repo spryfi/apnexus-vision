@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Filter, Fuel } from "lucide-react";
+import { Plus, Filter, Fuel as FuelIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FuelTransaction {
@@ -192,7 +192,7 @@ export default function Fuel() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Fuel className="h-8 w-8" />
+            <FuelIcon className="h-8 w-8" />
             Driver Fuel Tracking
           </h1>
           <p className="text-muted-foreground">

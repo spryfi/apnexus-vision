@@ -192,9 +192,9 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Transaction</DialogTitle>
+          <DialogTitle>Pay a Bill</DialogTitle>
           <DialogDescription>
-            Create a new accounts payable transaction
+            Enter bill information to process payment
           </DialogDescription>
         </DialogHeader>
 
@@ -411,7 +411,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Add Transaction
+              Save Bill Payment
             </Button>
           </DialogFooter>
         </form>

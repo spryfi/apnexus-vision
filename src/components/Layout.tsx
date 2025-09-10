@@ -4,13 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Receipt, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, LogOut, Fuel } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Transactions", href: "/transactions", icon: Receipt },
+  { name: "Pay Bills", href: "/transactions", icon: Receipt },
+  { name: "Fuel Tracking", href: "/fuel", icon: Fuel },
   { name: "Vendors & Categories", href: "/vendors", icon: Users },
 ];
 

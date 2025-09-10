@@ -933,6 +933,51 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_transactions: {
+        Row: {
+          card_number: string | null
+          cost_per_gallon: number
+          created_at: string
+          driver_name: string
+          gallons: number
+          id: string
+          location: string
+          odometer_reading: number | null
+          total_cost: number
+          transaction_date: string
+          updated_at: string
+          vehicle: string
+        }
+        Insert: {
+          card_number?: string | null
+          cost_per_gallon: number
+          created_at?: string
+          driver_name: string
+          gallons: number
+          id?: string
+          location: string
+          odometer_reading?: number | null
+          total_cost: number
+          transaction_date: string
+          updated_at?: string
+          vehicle: string
+        }
+        Update: {
+          card_number?: string | null
+          cost_per_gallon?: number
+          created_at?: string
+          driver_name?: string
+          gallons?: number
+          id?: string
+          location?: string
+          odometer_reading?: number | null
+          total_cost?: number
+          transaction_date?: string
+          updated_at?: string
+          vehicle?: string
+        }
+        Relationships: []
+      }
       gis_qualifications: {
         Row: {
           anchor_address_id: string
