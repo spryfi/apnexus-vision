@@ -48,92 +48,123 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className={`font-bold tracking-tight flex items-center justify-center gap-2 ${isMobile ? 'text-xl' : 'text-3xl'}`}>
-          <SettingsIcon className={isMobile ? "h-5 w-5" : "h-8 w-8"} />
-          Settings & Reference Data
-        </h1>
-        <p className={`text-muted-foreground ${isMobile ? 'text-sm px-2' : ''}`}>
+        <div className={`flex items-center justify-center gap-2 ${isMobile ? 'flex-col' : ''}`}>
+          <SettingsIcon className={isMobile ? "h-6 w-6" : "h-8 w-8"} />
+          <h1 className={`font-bold tracking-tight ${isMobile ? 'text-lg' : 'text-3xl'}`}>
+            Settings & Reference Data
+          </h1>
+        </div>
+        <p className={`text-muted-foreground ${isMobile ? 'text-xs px-4' : ''}`}>
           Manage company cards, tasks, vendors, staff, and expense categories
         </p>
       </div>
 
       {/* Settings Tabs */}
-      <Tabs defaultValue="cards" className="space-y-6">
-        <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 h-auto gap-1' : 'grid-cols-5'}`}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger value="cards" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
-                <CreditCard className="h-4 w-4" />
-                {isMobile ? 'Cards' : 'Company Cards'}
+      <Tabs defaultValue="cards" className="space-y-4">
+        {isMobile ? (
+          /* Mobile: Scrollable horizontal tabs */
+          <div className="overflow-x-auto">
+            <TabsList className="inline-flex h-auto min-w-max gap-1 p-1 bg-muted">
+              <TabsTrigger value="cards" className="whitespace-nowrap text-xs px-3 py-2">
+                <CreditCard className="h-3 w-3 mr-1" />
+                Cards
               </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Manage credit cards, debit cards, and fuel cards</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger value="tasks" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
-                <CheckSquare className="h-4 w-4" />
-                {isMobile ? 'Tasks' : 'Task Dashboard'}
+              <TabsTrigger value="tasks" className="whitespace-nowrap text-xs px-3 py-2">
+                <CheckSquare className="h-3 w-3 mr-1" />
+                Tasks
               </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>View weekly and monthly recurring tasks</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger value="vendors" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
-                <Building className="h-4 w-4" />
+              <TabsTrigger value="vendors" className="whitespace-nowrap text-xs px-3 py-2">
+                <Building className="h-3 w-3 mr-1" />
                 Vendors
               </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Manage vendor information and contact details</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger value="staff" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
-                <Users className="h-4 w-4" />
+              <TabsTrigger value="staff" className="whitespace-nowrap text-xs px-3 py-2">
+                <Users className="h-3 w-3 mr-1" />
                 Staff
               </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Manage employee information and roles</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger value="categories" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
-                <Tag className="h-4 w-4" />
-                {isMobile ? 'Categories' : 'Categories'}
+              <TabsTrigger value="categories" className="whitespace-nowrap text-xs px-3 py-2">
+                <Tag className="h-3 w-3 mr-1" />
+                Categories
               </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Manage expense categories and classifications</p>
-            </TooltipContent>
-          </Tooltip>
-        </TabsList>
+            </TabsList>
+          </div>
+        ) : (
+          /* Desktop: Grid layout */
+          <TabsList className="grid w-full grid-cols-5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="cards" className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Company Cards
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Manage credit cards, debit cards, and fuel cards</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="tasks" className="flex items-center gap-2">
+                  <CheckSquare className="h-4 w-4" />
+                  Task Dashboard
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View weekly and monthly recurring tasks</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="vendors" className="flex items-center gap-2">
+                  <Building className="h-4 w-4" />
+                  Vendors
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Manage vendor information and contact details</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="staff" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Staff
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Manage employee information and roles</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="categories" className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Categories
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Manage expense categories and classifications</p>
+              </TooltipContent>
+            </Tooltip>
+          </TabsList>
+        )}
 
         {/* Company Cards Tab */}
         <TabsContent value="cards">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className={isMobile ? "pb-3" : ""}>
+              <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
                 <CreditCard className="h-5 w-5" />
                 Company Cards Management
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className={isMobile ? "p-3" : ""}>
               <CardManagement />
             </CardContent>
           </Card>
@@ -142,13 +173,13 @@ export default function Settings() {
         {/* Task Dashboard Tab */}
         <TabsContent value="tasks">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className={isMobile ? "pb-3" : ""}>
+              <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
                 <CheckSquare className="h-5 w-5" />
                 Task Dashboard
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className={isMobile ? "p-3" : ""}>
               <TaskDashboard />
             </CardContent>
           </Card>
@@ -157,17 +188,17 @@ export default function Settings() {
         {/* Vendors Tab */}
         <TabsContent value="vendors">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className={isMobile ? "pb-3" : ""}>
+              <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
                 <Building className="h-5 w-5" />
                 Vendor Management
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center py-8">
-                <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">Vendor management coming soon</p>
-                <p className="text-sm text-muted-foreground">
+            <CardContent className={isMobile ? "p-3 py-6" : "p-6"}>
+              <div className="text-center py-4">
+                <Building className={`text-muted-foreground mx-auto mb-4 ${isMobile ? 'h-8 w-8' : 'h-12 w-12'}`} />
+                <p className={`text-muted-foreground mb-2 ${isMobile ? 'text-sm' : ''}`}>Vendor management coming soon</p>
+                <p className={`text-muted-foreground ${isMobile ? 'text-xs px-2' : 'text-sm'}`}>
                   This will allow you to manage vendor contacts, payment terms, and preferences
                 </p>
               </div>
@@ -178,17 +209,17 @@ export default function Settings() {
         {/* Staff Tab */}
         <TabsContent value="staff">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className={isMobile ? "pb-3" : ""}>
+              <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
                 <Users className="h-5 w-5" />
                 Staff Management
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">Staff management coming soon</p>
-                <p className="text-sm text-muted-foreground">
+            <CardContent className={isMobile ? "p-3 py-6" : "p-6"}>
+              <div className="text-center py-4">
+                <Users className={`text-muted-foreground mx-auto mb-4 ${isMobile ? 'h-8 w-8' : 'h-12 w-12'}`} />
+                <p className={`text-muted-foreground mb-2 ${isMobile ? 'text-sm' : ''}`}>Staff management coming soon</p>
+                <p className={`text-muted-foreground ${isMobile ? 'text-xs px-2' : 'text-sm'}`}>
                   This will allow you to manage employee information, roles, and permissions
                 </p>
               </div>
@@ -199,17 +230,17 @@ export default function Settings() {
         {/* Categories Tab */}
         <TabsContent value="categories">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className={isMobile ? "pb-3" : ""}>
+              <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
                 <Tag className="h-5 w-5" />
                 Expense Categories
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center py-8">
-                <Tag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">Category management coming soon</p>
-                <p className="text-sm text-muted-foreground">
+            <CardContent className={isMobile ? "p-3 py-6" : "p-6"}>
+              <div className="text-center py-4">
+                <Tag className={`text-muted-foreground mx-auto mb-4 ${isMobile ? 'h-8 w-8' : 'h-12 w-12'}`} />
+                <p className={`text-muted-foreground mb-2 ${isMobile ? 'text-sm' : ''}`}>Category management coming soon</p>
+                <p className={`text-muted-foreground ${isMobile ? 'text-xs px-2' : 'text-sm'}`}>
                   This will allow you to manage expense categories and budget classifications
                 </p>
               </div>
