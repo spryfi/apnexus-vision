@@ -8,8 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Filter, Users, Edit } from "lucide-react";
+import { Plus, Filter, Users, Edit, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import StaffWizard from "@/components/StaffWizard";
 
 interface Employee {
   id: string;
@@ -25,6 +26,7 @@ export default function Staff() {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [filters, setFilters] = useState({
     search: '',
@@ -190,10 +192,16 @@ export default function Staff() {
             Manage employee information and roles
           </p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Employee
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowWizard(true)} className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Staff Wizard
+          </Button>
+          <Button variant="outline" onClick={() => setShowAddDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Quick Add
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -387,6 +395,13 @@ export default function Staff() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Staff Wizard */}
+      <StaffWizard 
+        open={showWizard}
+        onOpenChange={setShowWizard}
+        onStaffAdded={fetchEmployees}
+      />
     </div>
   );
 }
