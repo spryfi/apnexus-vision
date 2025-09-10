@@ -4,17 +4,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Receipt, Users, LogOut, Fuel, DollarSign, UserCheck } from "lucide-react";
+import { Shield, Settings, Receipt, Users, LogOut, Fuel, DollarSign, UserCheck } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Pay Bills", href: "/transactions", icon: Receipt },
+  { name: "AP-Fortress", href: "/", icon: Shield },
+  { name: "Admin Hub", href: "/admin", icon: Settings },
+  { name: "Legacy Transactions", href: "/transactions", icon: Receipt },
+  { name: "Vendors & Categories", href: "/vendors", icon: Users },
   { name: "Fuel Tracking", href: "/fuel", icon: Fuel },
   { name: "Staff", href: "/staff", icon: UserCheck },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
-  { name: "Vendors & Categories", href: "/vendors", icon: Users },
 ];
 
 interface LayoutProps {
@@ -35,7 +36,7 @@ function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>
             <div className="flex items-center gap-2">
-              <div className="font-bold text-primary">APNexus</div>
+              <div className="font-bold text-primary">AP-Fortress</div>
             </div>
           </SidebarGroupLabel>
           <SidebarGroupContent>

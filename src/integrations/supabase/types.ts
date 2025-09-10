@@ -933,6 +933,47 @@ export type Database = {
         }
         Relationships: []
       }
+      flagged_transactions: {
+        Row: {
+          flag_reason: string
+          flagged_at: string | null
+          id: string
+          original_transaction_id: string
+          reviewed: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          transaction_data: Json
+        }
+        Insert: {
+          flag_reason: string
+          flagged_at?: string | null
+          id?: string
+          original_transaction_id: string
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          transaction_data: Json
+        }
+        Update: {
+          flag_reason?: string
+          flagged_at?: string | null
+          id?: string
+          original_transaction_id?: string
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          transaction_data?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flagged_transactions_original_transaction_id_fkey"
+            columns: ["original_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_transactions: {
         Row: {
           card_number: string | null
@@ -1755,6 +1796,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_methods: {
+        Row: {
+          account_details: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          method_name: string
+          method_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_details?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          method_name: string
+          method_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_details?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          method_name?: string
+          method_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       payment_records: {
         Row: {
@@ -2872,6 +2943,8 @@ export type Database = {
       }
       transactions: {
         Row: {
+          ai_flag_reason: string | null
+          ai_flagged_status: boolean | null
           amount: number
           audit_trail: string | null
           check_number: string | null
@@ -2886,12 +2959,15 @@ export type Database = {
           paid_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_source: string | null
+          payment_source_detail: string | null
           purchase_description: string
           status: Database["public"]["Enums"]["transaction_status"]
           updated_at: string
           vendor_id: string
         }
         Insert: {
+          ai_flag_reason?: string | null
+          ai_flagged_status?: boolean | null
           amount: number
           audit_trail?: string | null
           check_number?: string | null
@@ -2906,12 +2982,15 @@ export type Database = {
           paid_date?: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_source?: string | null
+          payment_source_detail?: string | null
           purchase_description: string
           status?: Database["public"]["Enums"]["transaction_status"]
           updated_at?: string
           vendor_id: string
         }
         Update: {
+          ai_flag_reason?: string | null
+          ai_flagged_status?: boolean | null
           amount?: number
           audit_trail?: string | null
           check_number?: string | null
@@ -2926,6 +3005,7 @@ export type Database = {
           paid_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_source?: string | null
+          payment_source_detail?: string | null
           purchase_description?: string
           status?: Database["public"]["Enums"]["transaction_status"]
           updated_at?: string
@@ -3652,6 +3732,7 @@ export type Database = {
         | "cancelled"
       spryfi_role: "admin" | "networkops" | "viewer"
       transaction_status:
+        | "Entry Required"
         | "Pending Approval"
         | "Approved for Payment"
         | "Paid"
@@ -3817,6 +3898,7 @@ export const Constants = {
       ],
       spryfi_role: ["admin", "networkops", "viewer"],
       transaction_status: [
+        "Entry Required",
         "Pending Approval",
         "Approved for Payment",
         "Paid",

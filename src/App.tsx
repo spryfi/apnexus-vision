@@ -6,7 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
-import Dashboard from "@/pages/Dashboard";
+import APFortress from "@/pages/APFortress";
+import AdminHub from "@/pages/AdminHub";
 import Transactions from "@/pages/Transactions";
 import Vendors from "@/pages/Vendors";
 import Fuel from "@/pages/Fuel";
@@ -36,7 +37,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/" element={<Layout><APFortress /></Layout>} />
+            <Route path="/admin" element={<Layout><AdminHub /></Layout>} />
             <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
             <Route path="/vendors" element={<Layout><Vendors /></Layout>} />
             <Route path="/fuel" element={<Layout><Fuel /></Layout>} />
