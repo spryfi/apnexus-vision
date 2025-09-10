@@ -2887,6 +2887,95 @@ export type Database = {
         }
         Relationships: []
       }
+      task_completions: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          completion_data: Json | null
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          status: string
+          task_template_id: string
+          updated_at: string
+          validated_at: string | null
+          validation_result: Json | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_data?: Json | null
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          status?: string
+          task_template_id: string
+          updated_at?: string
+          validated_at?: string | null
+          validation_result?: Json | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_data?: Json | null
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          status?: string
+          task_template_id?: string
+          updated_at?: string
+          validated_at?: string | null
+          validation_result?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_completions_task_template_id_fkey"
+            columns: ["task_template_id"]
+            isOneToOne: false
+            referencedRelation: "task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          required_fields: Json | null
+          task_type: string
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          required_fields?: Json | null
+          task_type: string
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          required_fields?: Json | null
+          task_type?: string
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: []
+      }
       technicians: {
         Row: {
           created_at: string

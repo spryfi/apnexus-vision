@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Calendar, DollarSign, Clock, Users } from "lucide-react";
+import TaskDashboard from "@/components/TaskDashboard";
 import { useToast } from "@/hooks/use-toast";
 
 interface PayrollRecord {
@@ -311,6 +312,11 @@ export default function Payroll() {
 
   return (
     <div className="space-y-6">
+      {/* Task Dashboard */}
+      <TaskDashboard />
+      
+      {/* Payroll Management Section */}
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -627,6 +633,7 @@ export default function Payroll() {
           </form>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
