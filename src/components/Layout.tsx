@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LayoutDashboard, Receipt, Users, LogOut, Fuel } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, LogOut, Fuel, DollarSign, UserCheck } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
@@ -12,6 +12,8 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Pay Bills", href: "/transactions", icon: Receipt },
   { name: "Fuel Tracking", href: "/fuel", icon: Fuel },
+  { name: "Staff", href: "/staff", icon: UserCheck },
+  { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Vendors & Categories", href: "/vendors", icon: Users },
 ];
 

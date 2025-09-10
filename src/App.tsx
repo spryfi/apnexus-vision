@@ -10,6 +10,8 @@ import Dashboard from "@/pages/Dashboard";
 import Transactions from "@/pages/Transactions";
 import Vendors from "@/pages/Vendors";
 import Fuel from "@/pages/Fuel";
+import Staff from "@/pages/Staff";
+import Payroll from "@/pages/Payroll";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 
@@ -38,6 +40,8 @@ const App = () => (
             <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
             <Route path="/vendors" element={<Layout><Vendors /></Layout>} />
             <Route path="/fuel" element={<Layout><Fuel /></Layout>} />
+            <Route path="/staff" element={<Layout><Staff /></Layout>} />
+            <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

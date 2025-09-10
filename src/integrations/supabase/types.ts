@@ -1810,6 +1810,68 @@ export type Database = {
           },
         ]
       }
+      payroll: {
+        Row: {
+          created_at: string
+          deductions: number | null
+          employee_id: string
+          gross_pay: number
+          hours_worked: number | null
+          id: string
+          net_pay: number | null
+          notes: string | null
+          overtime_hours: number | null
+          overtime_pay: number | null
+          pay_date: string | null
+          pay_period_end: string
+          pay_period_start: string
+          total_gross_pay: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deductions?: number | null
+          employee_id: string
+          gross_pay: number
+          hours_worked?: number | null
+          id?: string
+          net_pay?: number | null
+          notes?: string | null
+          overtime_hours?: number | null
+          overtime_pay?: number | null
+          pay_date?: string | null
+          pay_period_end: string
+          pay_period_start: string
+          total_gross_pay: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deductions?: number | null
+          employee_id?: string
+          gross_pay?: number
+          hours_worked?: number | null
+          id?: string
+          net_pay?: number | null
+          notes?: string | null
+          overtime_hours?: number | null
+          overtime_pay?: number | null
+          pay_date?: string | null
+          pay_period_end?: string
+          pay_period_start?: string
+          total_gross_pay?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_leads: {
         Row: {
           address: string
