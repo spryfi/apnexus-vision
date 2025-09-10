@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings as SettingsIcon, CreditCard, CheckSquare, Users, Building, Tag } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 import CardManagement from "@/components/CardManagement";
 import TaskDashboard from "@/components/TaskDashboard";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Settings() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -49,23 +51,23 @@ export default function Settings() {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight flex items-center justify-center gap-2">
-          <SettingsIcon className="h-8 w-8" />
+        <h1 className={`font-bold tracking-tight flex items-center justify-center gap-2 ${isMobile ? 'text-xl' : 'text-3xl'}`}>
+          <SettingsIcon className={isMobile ? "h-5 w-5" : "h-8 w-8"} />
           Settings & Reference Data
         </h1>
-        <p className="text-muted-foreground">
+        <p className={`text-muted-foreground ${isMobile ? 'text-sm px-2' : ''}`}>
           Manage company cards, tasks, vendors, staff, and expense categories
         </p>
       </div>
 
       {/* Settings Tabs */}
       <Tabs defaultValue="cards" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 h-auto gap-1' : 'grid-cols-5'}`}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <TabsTrigger value="cards" className="flex items-center gap-2">
+              <TabsTrigger value="cards" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
                 <CreditCard className="h-4 w-4" />
-                Company Cards
+                {isMobile ? 'Cards' : 'Company Cards'}
               </TabsTrigger>
             </TooltipTrigger>
             <TooltipContent>
@@ -75,9 +77,9 @@ export default function Settings() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <TabsTrigger value="tasks" className="flex items-center gap-2">
+              <TabsTrigger value="tasks" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
                 <CheckSquare className="h-4 w-4" />
-                Task Dashboard
+                {isMobile ? 'Tasks' : 'Task Dashboard'}
               </TabsTrigger>
             </TooltipTrigger>
             <TooltipContent>
@@ -87,7 +89,7 @@ export default function Settings() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <TabsTrigger value="vendors" className="flex items-center gap-2">
+              <TabsTrigger value="vendors" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
                 <Building className="h-4 w-4" />
                 Vendors
               </TabsTrigger>
@@ -99,7 +101,7 @@ export default function Settings() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <TabsTrigger value="staff" className="flex items-center gap-2">
+              <TabsTrigger value="staff" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
                 <Users className="h-4 w-4" />
                 Staff
               </TabsTrigger>
@@ -111,9 +113,9 @@ export default function Settings() {
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <TabsTrigger value="categories" className="flex items-center gap-2">
+              <TabsTrigger value="categories" className={`flex items-center gap-2 ${isMobile ? 'text-xs py-3 px-2' : ''}`}>
                 <Tag className="h-4 w-4" />
-                Categories
+                {isMobile ? 'Categories' : 'Categories'}
               </TabsTrigger>
             </TooltipTrigger>
             <TooltipContent>
