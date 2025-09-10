@@ -888,6 +888,51 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          created_at: string
+          employee_name: string
+          id: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_name: string
+          id?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_name?: string
+          id?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expense_categories: {
+        Row: {
+          category_name: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          category_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          category_name?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gis_qualifications: {
         Row: {
           anchor_address_id: string
@@ -2718,6 +2763,91 @@ export type Database = {
           },
         ]
       }
+      transactions: {
+        Row: {
+          amount: number
+          audit_trail: string | null
+          check_number: string | null
+          created_at: string
+          due_date: string | null
+          employee_id: string
+          expense_category_id: string
+          id: string
+          invoice_date: string
+          invoice_number: string | null
+          invoice_receipt_url: string | null
+          paid_date: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_source: string | null
+          purchase_description: string
+          status: Database["public"]["Enums"]["transaction_status"]
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          amount: number
+          audit_trail?: string | null
+          check_number?: string | null
+          created_at?: string
+          due_date?: string | null
+          employee_id: string
+          expense_category_id: string
+          id?: string
+          invoice_date: string
+          invoice_number?: string | null
+          invoice_receipt_url?: string | null
+          paid_date?: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_source?: string | null
+          purchase_description: string
+          status?: Database["public"]["Enums"]["transaction_status"]
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          amount?: number
+          audit_trail?: string | null
+          check_number?: string | null
+          created_at?: string
+          due_date?: string | null
+          employee_id?: string
+          expense_category_id?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string | null
+          invoice_receipt_url?: string | null
+          paid_date?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_source?: string | null
+          purchase_description?: string
+          status?: Database["public"]["Enums"]["transaction_status"]
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_expense_category_id_fkey"
+            columns: ["expense_category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usage_type_options: {
         Row: {
           key: string
@@ -2897,6 +3027,50 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      vendors: {
+        Row: {
+          contact_person: string | null
+          created_at: string
+          default_expense_category_id: string | null
+          email: string | null
+          full_address: string | null
+          id: string
+          phone_number: string | null
+          updated_at: string
+          vendor_name: string
+        }
+        Insert: {
+          contact_person?: string | null
+          created_at?: string
+          default_expense_category_id?: string | null
+          email?: string | null
+          full_address?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string
+          vendor_name: string
+        }
+        Update: {
+          contact_person?: string | null
+          created_at?: string
+          default_expense_category_id?: string | null
+          email?: string | null
+          full_address?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendors_default_expense_category_id_fkey"
+            columns: ["default_expense_category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       verizon_addresses: {
         Row: {
@@ -3356,6 +3530,12 @@ export type Database = {
       }
     }
     Enums: {
+      payment_method:
+        | "Credit Card"
+        | "ACH"
+        | "Check"
+        | "Fleet Fuel Card"
+        | "Debit Card"
       provisioning_status_type:
         | "pending_provisioning"
         | "provisioning"
@@ -3364,6 +3544,11 @@ export type Database = {
         | "activated"
         | "cancelled"
       spryfi_role: "admin" | "networkops" | "viewer"
+      transaction_status:
+        | "Pending Approval"
+        | "Approved for Payment"
+        | "Paid"
+        | "Reconciled"
       user_role: "admin" | "office" | "customer"
     }
     CompositeTypes: {
@@ -3508,6 +3693,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      payment_method: [
+        "Credit Card",
+        "ACH",
+        "Check",
+        "Fleet Fuel Card",
+        "Debit Card",
+      ],
       provisioning_status_type: [
         "pending_provisioning",
         "provisioning",
@@ -3517,6 +3709,12 @@ export const Constants = {
         "cancelled",
       ],
       spryfi_role: ["admin", "networkops", "viewer"],
+      transaction_status: [
+        "Pending Approval",
+        "Approved for Payment",
+        "Paid",
+        "Reconciled",
+      ],
       user_role: ["admin", "office", "customer"],
     },
   },
