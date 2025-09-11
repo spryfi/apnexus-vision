@@ -7,6 +7,41 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Function to properly parse CSV lines with quoted values
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  let i = 0;
+  
+  while (i < line.length) {
+    const char = line[i];
+    
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        // Escaped quote
+        current += '"';
+        i += 2;
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes;
+        i++;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // Field separator
+      result.push(current.trim());
+      current = '';
+      i++;
+    } else {
+      current += char;
+      i++;
+    }
+  }
+  
+  result.push(current.trim());
+  return result;
+}
+
 interface CSVRow {
   'Trans ID': string;
   'Trans Date': string;
@@ -58,30 +93,47 @@ serve(async (req) => {
 
     // Read and parse CSV content
     const csvContent = await file.text();
-    const lines = csvContent.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+    console.log('File content length:', csvContent.length);
+    console.log('First 500 characters:', csvContent.substring(0, 500));
     
+    // Better CSV parsing that handles quoted values
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    console.log('Total lines found:', lines.length);
+    
+    if (lines.length === 0) {
+      throw new Error('File appears to be empty');
+    }
+    
+    // Parse CSV header row
+    const headers = parseCSVLine(lines[0]);
     console.log('CSV headers found:', headers);
 
     const processedTransactions: ProcessedTransaction[] = [];
 
     // Process each data row
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
+      const values = parseCSVLine(lines[i]);
       
-      if (values.length < headers.length) continue;
+      if (values.length === 0 || values.every(v => !v.trim())) {
+        console.log(`Skipping empty row ${i + 1}`);
+        continue;
+      }
 
       const row: Record<string, string> = {};
       headers.forEach((header, index) => {
         row[header] = values[index] || '';
       });
 
+      console.log(`Processing row ${i + 1}:`, row);
+
       try {
         const transaction = await processTransaction(row as unknown as CSVRow, supabase);
         processedTransactions.push(transaction);
+        console.log(`Successfully processed transaction for ${transaction.employeeName}`);
       } catch (error) {
-        console.error('Error processing transaction:', error);
-        // Skip invalid rows
+        console.error(`Error processing row ${i + 1}:`, error);
+        console.error('Row data:', row);
+        // Skip invalid rows but continue processing
       }
     }
 
@@ -110,22 +162,50 @@ serve(async (req) => {
 });
 
 async function processTransaction(row: CSVRow, supabase: any): Promise<ProcessedTransaction> {
+  // Log the raw row data for debugging
+  console.log('Raw CSV row:', row);
+  
   const sourceTransactionId = row['Trans ID'];
-  const transactionDate = new Date(row['Trans Date']).toISOString();
+  if (!sourceTransactionId) {
+    throw new Error('Missing Trans ID');
+  }
+  
+  const transactionDateStr = row['Trans Date'];
+  if (!transactionDateStr) {
+    throw new Error('Missing Trans Date');
+  }
+  
+  const transactionDate = new Date(transactionDateStr).toISOString();
   const vehicleId = row['Custom Vehicle/Asset ID'];
-  const employeeName = `${row['Driver First Name']} ${row['Driver Last Name']}`.trim();
-  const gallons = parseFloat(row['Units']);
-  const costPerGallon = parseFloat(row['Unit Cost']);
-  const totalCost = parseFloat(row['Total Fuel Cost']);
-  const odometer = parseInt(row['Current Odometer']);
-  const merchantName = row['Merchant Name'];
+  const employeeName = `${row['Driver First Name'] || ''} ${row['Driver Last Name'] || ''}`.trim();
+  const gallons = parseFloat(row['Units']) || 0;
+  const costPerGallon = parseFloat(row['Unit Cost']) || 0;
+  const totalCost = parseFloat(row['Total Fuel Cost']) || 0;
+  const odometer = parseInt(row['Current Odometer']) || 0;
+  const merchantName = row['Merchant Name'] || '';
+  
+  console.log('Parsed transaction data:', {
+    sourceTransactionId,
+    transactionDate,
+    vehicleId,
+    employeeName,
+    gallons,
+    costPerGallon,
+    totalCost,
+    odometer,
+    merchantName
+  });
 
   // Check for duplicate
-  const { data: existing } = await supabase
+  const { data: existing, error: duplicateError } = await supabase
     .from('fuel_transactions_new')
     .select('id')
     .eq('source_transaction_id', sourceTransactionId)
-    .single();
+    .maybeSingle();
+    
+  if (duplicateError) {
+    console.error('Error checking for duplicates:', duplicateError);
+  }
 
   if (existing) {
     return {

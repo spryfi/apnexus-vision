@@ -59,9 +59,16 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
       });
 
       if (error) throw error;
-
-      setProcessedData(data);
-      setStep('verification');
+      
+      console.log('Received data from edge function:', data);
+      
+      // Handle the response format from the edge function
+      if (data && data.transactions) {
+        setProcessedData(data);
+        setStep('verification');
+      } else {
+        throw new Error('Invalid response format from processing function');
+      }
     } catch (error) {
       console.error('Error processing file:', error);
       toast({
@@ -80,7 +87,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     
     try {
       const newTransactions = processedData.transactions
-        .filter(t => t.status === 'new')
+        .filter(t => t.status === 'new' || t.status === 'flagged')
         .map(t => ({
           source_transaction_id: t.sourceTransactionId,
           transaction_date: t.transactionDate,
@@ -309,10 +316,10 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
               </Button>
               <Button 
                 onClick={confirmImport} 
-                disabled={importing || processedData.summary.new === 0}
+                disabled={importing || (processedData.summary.new + processedData.summary.flagged) === 0}
               >
                 {importing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Confirm & Import {processedData.summary.new} New Transactions
+                Confirm & Import {processedData.summary.new + processedData.summary.flagged} Transactions
               </Button>
             </div>
           </div>
