@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, DollarSign, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import QuickStartActionHub from "@/components/QuickStartActionHub";
+import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 
 interface Transaction {
   id: string;
@@ -22,6 +24,7 @@ interface DashboardStats {
   dueThisWeek: number;
   unreconciled: number;
   pendingApproval: number;
+  entryRequired: number;
 }
 
 export default function Dashboard() {
@@ -29,11 +32,14 @@ export default function Dashboard() {
     totalOverdue: 0,
     dueThisWeek: 0,
     unreconciled: 0,
-    pendingApproval: 0
+    pendingApproval: 0,
+    entryRequired: 0
   });
   const [pendingTransactions, setPendingTransactions] = useState<Transaction[]>([]);
   const [upcomingPayments, setUpcomingPayments] = useState<Transaction[]>([]);
+  const [entryRequiredTransactions, setEntryRequiredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
   const { toast } = useToast();
   const { userProfile } = useAuth();
 
@@ -74,16 +80,19 @@ export default function Dashboard() {
 
       const unreconciled = transactions?.filter(t => t.status === 'Paid') || [];
       const pending = transactions?.filter(t => t.status === 'Pending Approval') || [];
+      const entryRequired = transactions?.filter(t => t.status === 'Entry Required') || [];
 
       setStats({
         totalOverdue: overdue.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0),
         dueThisWeek: dueThisWeek.reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0),
         unreconciled: unreconciled.length,
-        pendingApproval: pending.length
+        pendingApproval: pending.length,
+        entryRequired: entryRequired.length
       });
 
       setPendingTransactions(pending.slice(0, 5));
       setUpcomingPayments(dueThisWeek.slice(0, 5));
+      setEntryRequiredTransactions(entryRequired.slice(0, 5));
     } catch (error) {
       toast({
         title: "Error fetching dashboard data",
@@ -226,81 +235,91 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Action Required Queue */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Action Required</CardTitle>
-            <CardDescription>
-              Transactions pending approval
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pendingTransactions.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No transactions pending approval
-                </p>
-              ) : (
-                pendingTransactions.map((transaction) => (
+      {/* Conditional Main Content */}
+      {stats.entryRequired > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Transactions Requiring Action Queue */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Transactions Requiring Action</CardTitle>
+              <CardDescription>
+                Transactions that need entry or completion
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {entryRequiredTransactions.map((transaction) => (
                   <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="space-y-1">
                       <p className="font-medium">{transaction.vendors?.vendor_name}</p>
                       <p className="text-sm text-muted-foreground">
                         {formatCurrency(transaction.amount)} • Due {formatDate(transaction.due_date)}
                       </p>
-                    </div>
-                    {(userProfile?.role === 'Admin' || userProfile?.role === 'Approver') && (
-                      <Button
-                        size="sm"
-                        onClick={() => approveTransaction(transaction.id)}
-                      >
-                        Approve
-                      </Button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Upcoming Payments */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Payments</CardTitle>
-            <CardDescription>
-              Approved transactions due this week
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {upcomingPayments.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No payments due this week
-                </p>
-              ) : (
-                upcomingPayments.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="space-y-1">
-                      <p className="font-medium">{transaction.vendors?.vendor_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatCurrency(transaction.amount)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant="outline" className="text-xs">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {formatDate(transaction.due_date)}
+                      <Badge className="bg-warning text-warning-foreground text-xs">
+                        Entry Required
                       </Badge>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {/* Navigate to transaction details */}}
+                    >
+                      Complete
+                    </Button>
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Payments */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Payments</CardTitle>
+              <CardDescription>
+                Approved transactions due this week
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {upcomingPayments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No payments due this week
+                  </p>
+                ) : (
+                  upcomingPayments.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">{transaction.vendors?.vendor_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatCurrency(transaction.amount)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="outline" className="text-xs">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {formatDate(transaction.due_date)}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <QuickStartActionHub onEnterExpense={() => setShowAddTransaction(true)} />
+      )}
+
+      <AddTransactionDialog 
+        open={showAddTransaction}
+        onOpenChange={setShowAddTransaction}
+        onSuccess={() => {
+          setShowAddTransaction(false);
+          fetchDashboardData();
+        }}
+      />
     </div>
   );
 }

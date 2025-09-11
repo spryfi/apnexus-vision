@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ interface Transaction {
 }
 
 export default function Transactions() {
+  const [searchParams] = useSearchParams();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,26 @@ export default function Transactions() {
   useEffect(() => {
     fetchTransactions();
   }, []);
+
+  useEffect(() => {
+    // Handle URL parameters when component mounts
+    const statusParam = searchParams.get('status');
+    const focusParam = searchParams.get('focus');
+    
+    if (statusParam) {
+      setFilters(prev => ({ ...prev, status: statusParam }));
+    }
+    
+    if (focusParam === 'search') {
+      // Focus the search input after a brief delay to ensure the DOM is ready
+      setTimeout(() => {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }, 100);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     applyFilters();
@@ -199,6 +221,7 @@ export default function Transactions() {
             <div className="space-y-2">
               <Label>Search</Label>
               <Input
+                id="search-input"
                 placeholder="Search transactions..."
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
