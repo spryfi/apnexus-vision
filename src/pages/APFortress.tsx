@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertCircle, Eye, FileText, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionEntryModal } from "@/components/TransactionEntryModal";
+import QuickStartActionHub from "@/components/QuickStartActionHub";
 
 interface Transaction {
   id: string;
@@ -133,15 +134,7 @@ export default function APFortress() {
         </CardHeader>
         <CardContent>
           {entryRequiredTransactions.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-green-800 mb-2">
-                All Clear!
-              </h3>
-              <p className="text-green-700">
-                No transactions requiring action at this time.
-              </p>
-            </div>
+            <QuickStartActionHub onEnterExpense={() => setSelectedTransaction({} as Transaction)} />
           ) : (
             <div className="space-y-4">
               {entryRequiredTransactions.map((transaction) => (
