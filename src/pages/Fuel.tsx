@@ -1,26 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Plus, Filter, Fuel as FuelIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FuelSmartReminder } from "@/components/FuelSmartReminder";
+import { FuelUploadWizard } from "@/components/FuelUploadWizard";
+import { FuelKPIDashboard } from "@/components/FuelKPIDashboard";
 
 interface FuelTransaction {
   id: string;
-  driver_name: string;
-  vehicle: string;
+  source_transaction_id?: string;
   transaction_date: string;
+  vehicle_id: string;
+  employee_name: string;
   gallons: number;
   cost_per_gallon: number;
   total_cost: number;
-  location: string;
-  odometer_reading: number;
-  card_number: string;
+  odometer: number;
+  merchant_name?: string;
+  status: string;
+  flag_reason?: string;
   created_at: string;
 }
 
@@ -28,25 +31,34 @@ export default function Fuel() {
   const [fuelTransactions, setFuelTransactions] = useState<FuelTransaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<FuelTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showUploadWizard, setShowUploadWizard] = useState(false);
   const [filters, setFilters] = useState({
-    driver: '',
+    employee: '',
     vehicle: '',
     month: '',
-    search: ''
-  });
-  const [formData, setFormData] = useState({
-    driver_name: '',
-    vehicle: '',
-    transaction_date: '',
-    gallons: '',
-    cost_per_gallon: '',
-    total_cost: '',
-    location: '',
-    odometer_reading: '',
-    card_number: ''
+    search: '',
+    status: ''
   });
   const { toast } = useToast();
+
+  // Check if we need to show the smart reminder
+  const lastMonth = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, []);
+
+  const lastMonthKey = useMemo(() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    return date.toISOString().slice(0, 7);
+  }, []);
+
+  const hasLastMonthData = useMemo(() => {
+    return fuelTransactions.some(t => 
+      t.transaction_date.slice(0, 7) === lastMonthKey
+    );
+  }, [fuelTransactions, lastMonthKey]);
 
   useEffect(() => {
     fetchFuelTransactions();
@@ -60,7 +72,7 @@ export default function Fuel() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('fuel_transactions')
+        .from('fuel_transactions_new')
         .select('*')
         .order('transaction_date', { ascending: false });
 
@@ -80,14 +92,14 @@ export default function Fuel() {
   const applyFilters = () => {
     let filtered = fuelTransactions;
 
-    if (filters.driver) {
+    if (filters.employee) {
       filtered = filtered.filter(t => 
-        t.driver_name.toLowerCase().includes(filters.driver.toLowerCase())
+        t.employee_name.toLowerCase().includes(filters.employee.toLowerCase())
       );
     }
     if (filters.vehicle) {
       filtered = filtered.filter(t => 
-        t.vehicle.toLowerCase().includes(filters.vehicle.toLowerCase())
+        t.vehicle_id.toLowerCase().includes(filters.vehicle.toLowerCase())
       );
     }
     if (filters.month) {
@@ -96,61 +108,22 @@ export default function Fuel() {
         return transactionMonth === filters.month;
       });
     }
+    if (filters.status) {
+      filtered = filtered.filter(t => t.status === filters.status);
+    }
     if (filters.search) {
       filtered = filtered.filter(t => 
-        t.driver_name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        t.vehicle.toLowerCase().includes(filters.search.toLowerCase()) ||
-        t.location.toLowerCase().includes(filters.search.toLowerCase())
+        t.employee_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        t.vehicle_id.toLowerCase().includes(filters.search.toLowerCase()) ||
+        (t.merchant_name && t.merchant_name.toLowerCase().includes(filters.search.toLowerCase()))
       );
     }
 
     setFilteredTransactions(filtered);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Calculate total cost
-    const totalCost = parseFloat(formData.gallons) * parseFloat(formData.cost_per_gallon);
-    
-    try {
-      const { error } = await supabase
-        .from('fuel_transactions')
-        .insert([{
-          ...formData,
-          gallons: parseFloat(formData.gallons),
-          cost_per_gallon: parseFloat(formData.cost_per_gallon),
-          total_cost: totalCost,
-          odometer_reading: parseInt(formData.odometer_reading)
-        }]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Fuel record added",
-        description: "Driver fuel transaction recorded successfully",
-      });
-
-      setFormData({
-        driver_name: '',
-        vehicle: '',
-        transaction_date: '',
-        gallons: '',
-        cost_per_gallon: '',
-        total_cost: '',
-        location: '',
-        odometer_reading: '',
-        card_number: ''
-      });
-      setShowAddDialog(false);
-      fetchFuelTransactions();
-    } catch (error) {
-      toast({
-        title: "Error adding fuel record",
-        description: "Could not save fuel transaction",
-        variant: "destructive",
-      });
-    }
+  const handleUploadSuccess = () => {
+    fetchFuelTransactions();
   };
 
   const formatCurrency = (amount: number) => {
@@ -193,17 +166,27 @@ export default function Fuel() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <FuelIcon className="h-8 w-8" />
-            Driver Fuel Tracking
+            Intelligent Fuel Tracking
           </h1>
           <p className="text-muted-foreground">
-            Track fuel costs and usage for each driver
+            Semi-automated fleet fuel reconciliation with smart import and validation
           </p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
+        <Button onClick={() => setShowUploadWizard(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Fuel Record
+          Upload Statement
         </Button>
       </div>
+
+      {/* Smart Reminder or KPI Dashboard */}
+      {!loading && !hasLastMonthData ? (
+        <FuelSmartReminder 
+          lastMonth={lastMonth}
+          onUploadClick={() => setShowUploadWizard(true)}
+        />
+      ) : (
+        <FuelKPIDashboard transactions={fuelTransactions} />
+      )}
 
       {/* Filters */}
       <Card>
@@ -214,7 +197,7 @@ export default function Fuel() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-2">
               <Label>Search</Label>
               <Input
@@ -224,17 +207,17 @@ export default function Fuel() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Driver</Label>
+              <Label>Employee</Label>
               <Input
-                placeholder="Driver name..."
-                value={filters.driver}
-                onChange={(e) => setFilters({ ...filters, driver: e.target.value })}
+                placeholder="Employee name..."
+                value={filters.employee}
+                onChange={(e) => setFilters({ ...filters, employee: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>Vehicle</Label>
               <Input
-                placeholder="Vehicle..."
+                placeholder="Vehicle ID..."
                 value={filters.vehicle}
                 onChange={(e) => setFilters({ ...filters, vehicle: e.target.value })}
               />
@@ -246,6 +229,18 @@ export default function Fuel() {
                 value={filters.month}
                 onChange={(e) => setFilters({ ...filters, month: e.target.value })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              >
+                <option value="">All</option>
+                <option value="Verified">Verified</option>
+                <option value="Flagged for Review">Flagged for Review</option>
+              </select>
             </div>
           </div>
         </CardContent>
@@ -264,19 +259,20 @@ export default function Fuel() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Driver</TableHead>
+                  <TableHead>Employee</TableHead>
                   <TableHead>Vehicle</TableHead>
-                  <TableHead>Location</TableHead>
+                  <TableHead>Merchant</TableHead>
                   <TableHead>Gallons</TableHead>
                   <TableHead>Price/Gallon</TableHead>
                   <TableHead>Total Cost</TableHead>
                   <TableHead>Odometer</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTransactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No fuel records found
                     </TableCell>
                   </TableRow>
@@ -284,13 +280,27 @@ export default function Fuel() {
                   filteredTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
-                      <TableCell className="font-medium">{transaction.driver_name}</TableCell>
-                      <TableCell>{transaction.vehicle}</TableCell>
-                      <TableCell>{transaction.location}</TableCell>
+                      <TableCell className="font-medium">{transaction.employee_name}</TableCell>
+                      <TableCell>{transaction.vehicle_id}</TableCell>
+                      <TableCell>{transaction.merchant_name || 'N/A'}</TableCell>
                       <TableCell>{transaction.gallons.toFixed(2)}</TableCell>
                       <TableCell>{formatCurrency(transaction.cost_per_gallon)}</TableCell>
                       <TableCell>{formatCurrency(transaction.total_cost)}</TableCell>
-                      <TableCell>{transaction.odometer_reading?.toLocaleString()}</TableCell>
+                      <TableCell>{transaction.odometer?.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          transaction.status === 'Verified' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {transaction.status}
+                        </span>
+                        {transaction.flag_reason && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {transaction.flag_reason}
+                          </div>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -300,114 +310,12 @@ export default function Fuel() {
         </CardContent>
       </Card>
 
-      {/* Add Fuel Record Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Add Fuel Record</DialogTitle>
-            <DialogDescription>
-              Enter driver fuel transaction details
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="driver_name">Driver Name *</Label>
-                <Input
-                  id="driver_name"
-                  required
-                  value={formData.driver_name}
-                  onChange={(e) => setFormData({...formData, driver_name: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="vehicle">Vehicle *</Label>
-                <Input
-                  id="vehicle"
-                  required
-                  value={formData.vehicle}
-                  onChange={(e) => setFormData({...formData, vehicle: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="transaction_date">Transaction Date *</Label>
-                <Input
-                  id="transaction_date"
-                  type="date"
-                  required
-                  value={formData.transaction_date}
-                  onChange={(e) => setFormData({...formData, transaction_date: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">Gas Station *</Label>
-                <Input
-                  id="location"
-                  required
-                  placeholder="e.g. Shell, BP, Exxon"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="gallons">Gallons *</Label>
-                <Input
-                  id="gallons"
-                  type="number"
-                  step="0.01"
-                  required
-                  value={formData.gallons}
-                  onChange={(e) => setFormData({...formData, gallons: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cost_per_gallon">Price per Gallon *</Label>
-                <Input
-                  id="cost_per_gallon"
-                  type="number"
-                  step="0.01"
-                  required
-                  value={formData.cost_per_gallon}
-                  onChange={(e) => setFormData({...formData, cost_per_gallon: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="odometer_reading">Odometer Reading</Label>
-                <Input
-                  id="odometer_reading"
-                  type="number"
-                  value={formData.odometer_reading}
-                  onChange={(e) => setFormData({...formData, odometer_reading: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="card_number">Card Number (last 4)</Label>
-                <Input
-                  id="card_number"
-                  placeholder="Last 4 digits"
-                  value={formData.card_number}
-                  onChange={(e) => setFormData({...formData, card_number: e.target.value})}
-                />
-              </div>
-            </div>
-            {formData.gallons && formData.cost_per_gallon && (
-              <div className="text-right">
-                <p className="text-lg font-semibold">
-                  Total: {formatCurrency(parseFloat(formData.gallons) * parseFloat(formData.cost_per_gallon))}
-                </p>
-              </div>
-            )}
-            <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                Save Fuel Record
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Upload Wizard */}
+      <FuelUploadWizard
+        isOpen={showUploadWizard}
+        onClose={() => setShowUploadWizard(false)}
+        onSuccess={handleUploadSuccess}
+      />
     </div>
   );
 }
