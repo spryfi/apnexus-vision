@@ -184,12 +184,15 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
     throw new Error('Missing Trans ID');
   }
   
-  const transactionDateStr = row['Trans Date'];
+  const transactionDateStr = row['Transaction Date'];
   if (!transactionDateStr) {
-    throw new Error('Missing Trans Date');
+    throw new Error('Missing Transaction Date');
   }
   
-  const transactionDate = new Date(transactionDateStr).toISOString();
+  // Combine Transaction Date and Transaction Time if available
+  const transactionTimeStr = row['Transaction Time'] || '00:00:00';
+  const fullDateTimeStr = `${transactionDateStr} ${transactionTimeStr}`;
+  const transactionDate = new Date(fullDateTimeStr).toISOString();
   const vehicleId = row['Custom Vehicle/Asset ID'];
   const employeeName = `${row['Driver First Name'] || ''} ${row['Driver Last Name'] || ''}`.trim();
   const gallons = parseFloat(row['Units']) || 0;
