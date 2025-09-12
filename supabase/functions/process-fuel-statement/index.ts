@@ -70,6 +70,8 @@ interface ProcessedTransaction {
 }
 
 serve(async (req) => {
+  console.log('Edge function called with method:', req.method);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -77,19 +79,23 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    console.log('Creating Supabase client...');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    console.log('Parsing form data...');
     const formData = await req.formData();
     const file = formData.get('file') as File;
     
     if (!file) {
+      console.error('No file provided in form data');
       return new Response(
         JSON.stringify({ error: 'No file provided' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Processing fuel statement file:', file.name);
+    console.log('Processing fuel statement file:', file.name, 'Type:', file.type, 'Size:', file.size);
 
     // Read and parse CSV content
     const csvContent = await file.text();
@@ -139,23 +145,31 @@ serve(async (req) => {
 
     console.log(`Processed ${processedTransactions.length} transactions`);
 
+    const result = {
+      transactions: processedTransactions,
+      summary: {
+        total: processedTransactions.length,
+        new: processedTransactions.filter(t => t.status === 'new').length,
+        duplicate: processedTransactions.filter(t => t.status === 'duplicate').length,
+        flagged: processedTransactions.filter(t => t.status === 'flagged').length
+      }
+    };
+
+    console.log('Returning result:', JSON.stringify(result, null, 2));
+
     return new Response(
-      JSON.stringify({ 
-        transactions: processedTransactions,
-        summary: {
-          total: processedTransactions.length,
-          new: processedTransactions.filter(t => t.status === 'new').length,
-          duplicate: processedTransactions.filter(t => t.status === 'duplicate').length,
-          flagged: processedTransactions.filter(t => t.status === 'flagged').length
-        }
-      }),
+      JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in process-fuel-statement function:', error);
+    console.error('Error details:', error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

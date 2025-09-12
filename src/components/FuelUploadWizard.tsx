@@ -51,29 +51,38 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     setStep('processing');
     
     try {
+      console.log('Starting file processing for:', file.name, 'Size:', file.size);
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('Calling edge function process-fuel-statement...');
       const { data, error } = await supabase.functions.invoke('process-fuel-statement', {
         body: formData,
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
       
       console.log('Received data from edge function:', data);
       
       // Handle the response format from the edge function
       if (data && data.transactions) {
+        console.log('Setting processed data:', data);
         setProcessedData(data);
         setStep('verification');
       } else {
+        console.error('Invalid response format:', data);
         throw new Error('Invalid response format from processing function');
       }
     } catch (error) {
       console.error('Error processing file:', error);
       toast({
         title: "Processing Error",
-        description: "Failed to process the fuel statement file.",
+        description: `Failed to process the fuel statement file: ${error.message}`,
         variant: "destructive",
       });
       setStep('upload');
@@ -86,6 +95,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     setImporting(true);
     
     try {
+      console.log('Starting import process...');
       const newTransactions = processedData.transactions
         .filter(t => t.status === 'new' || t.status === 'flagged')
         .map(t => ({
@@ -102,12 +112,19 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
           flag_reason: t.flagReason
         }));
 
+      console.log('Inserting transactions:', newTransactions);
+
       const { error } = await supabase
         .from('fuel_transactions_new')
         .insert(newTransactions);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database insertion error:', error);
+        throw error;
+      }
 
+      console.log('Import successful!');
+      
       toast({
         title: "Import Successful",
         description: `Successfully imported ${newTransactions.length} new fuel transactions.`,
@@ -119,7 +136,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
       console.error('Error importing transactions:', error);
       toast({
         title: "Import Error",
-        description: "Failed to import fuel transactions.",
+        description: `Failed to import fuel transactions: ${error.message}`,
         variant: "destructive",
       });
     } finally {
