@@ -1677,6 +1677,60 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_records: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          odometer_at_service: number
+          receipt_scan_url: string | null
+          service_date: string
+          service_description: string
+          service_provider_vendor_id: string | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          id?: string
+          odometer_at_service: number
+          receipt_scan_url?: string | null
+          service_date: string
+          service_description: string
+          service_provider_vendor_id?: string | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          odometer_at_service?: number
+          receipt_scan_url?: string | null
+          service_date?: string
+          service_description?: string
+          service_provider_vendor_id?: string | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_records_service_provider_vendor_id_fkey"
+            columns: ["service_provider_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_events: {
         Row: {
           customer_id: string | null
@@ -3426,6 +3480,60 @@ export type Database = {
           role?: string
           temp_password?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          asset_id: string
+          created_at: string
+          current_odometer: number | null
+          id: string
+          insurance_expiry_date: string | null
+          insurance_policy_number: string | null
+          license_plate: string | null
+          make: string | null
+          model: string | null
+          registration_expiry_date: string | null
+          status: string | null
+          updated_at: string
+          vehicle_name: string
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          current_odometer?: number | null
+          id?: string
+          insurance_expiry_date?: string | null
+          insurance_policy_number?: string | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          registration_expiry_date?: string | null
+          status?: string | null
+          updated_at?: string
+          vehicle_name: string
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          current_odometer?: number | null
+          id?: string
+          insurance_expiry_date?: string | null
+          insurance_policy_number?: string | null
+          license_plate?: string | null
+          make?: string | null
+          model?: string | null
+          registration_expiry_date?: string | null
+          status?: string | null
+          updated_at?: string
+          vehicle_name?: string
+          vin?: string | null
+          year?: number | null
         }
         Relationships: []
       }

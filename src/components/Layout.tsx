@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Shield, Settings, Receipt, Users, LogOut, Fuel, DollarSign, UserCheck, Menu } from "lucide-react";
+import { Shield, Settings, Receipt, Users, LogOut, Fuel, DollarSign, UserCheck, Menu, Truck } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import TaskStatusCards from "@/components/TaskStatusCards";
@@ -17,6 +17,7 @@ const navigation = [
   { name: "Legacy Transactions", href: "/transactions", icon: Receipt },
   { name: "Vendors & Categories", href: "/vendors", icon: Users },
   { name: "Fuel Tracking", href: "/fuel", icon: Fuel },
+  { name: "Fleet", href: "/fleet", icon: Truck },
   { name: "Staff", href: "/staff", icon: UserCheck },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Settings", href: "/settings", icon: Settings },
