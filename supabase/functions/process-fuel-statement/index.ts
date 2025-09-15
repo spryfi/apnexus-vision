@@ -239,16 +239,24 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
     };
   }
 
-  // AI Anomaly Detection
-  const flagCheck = await checkForAnomalies(
-    vehicleId,
-    employeeName,
-    gallons,
-    totalCost,
-    transactionDate,
-    odometer,
-    supabase
-  );
+  // Paul McKnight Allowlist - Skip AI anomaly detection
+  let flagCheck = { shouldFlag: false, reason: undefined };
+  
+  if (employeeName === "Paul McKnight") {
+    console.log('Paul McKnight detected - skipping anomaly checks, setting status to Verified');
+    // Skip anomaly detection for Paul McKnight, status will be 'new' which gets processed as 'Verified'
+  } else {
+    // AI Anomaly Detection for all other employees
+    flagCheck = await checkForAnomalies(
+      vehicleId,
+      employeeName,
+      gallons,
+      totalCost,
+      transactionDate,
+      odometer,
+      supabase
+    );
+  }
 
   return {
     sourceTransactionId,

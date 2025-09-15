@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { Plus, Filter, Fuel as FuelIcon } from "lucide-react";
+import { Plus, Filter, Fuel as FuelIcon, Flag } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { FuelSmartReminder } from "@/components/FuelSmartReminder";
 import { FuelUploadWizard } from "@/components/FuelUploadWizard";
@@ -161,7 +162,8 @@ export default function Fuel() {
   }
 
   return (
-    <div className="space-y-6">
+    <TooltipProvider>
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -288,18 +290,32 @@ export default function Fuel() {
                       <TableCell>{formatCurrency(transaction.total_cost)}</TableCell>
                       <TableCell>{transaction.odometer?.toLocaleString()}</TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          transaction.status === 'Verified' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {transaction.status}
-                        </span>
-                        {transaction.flag_reason && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {transaction.flag_reason}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {transaction.status === 'Flagged for Review' && transaction.flag_reason ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button className="text-red-600 hover:text-red-800 transition-colors">
+                                    <Flag className="h-4 w-4" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <div>
+                                    <p className="font-medium mb-1">Reason for Flag</p>
+                                    <p className="text-sm">{transaction.flag_reason}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : null}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            transaction.status === 'Verified' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {transaction.status}
+                          </span>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -316,6 +332,7 @@ export default function Fuel() {
         onClose={() => setShowUploadWizard(false)}
         onSuccess={handleUploadSuccess}
       />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
