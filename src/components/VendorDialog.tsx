@@ -303,7 +303,6 @@ export function VendorDialog({ open, onOpenChange, vendor, onSuccess }: VendorDi
                     <SelectValue placeholder="Select default category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No default category</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.category_name}
@@ -324,7 +323,6 @@ export function VendorDialog({ open, onOpenChange, vendor, onSuccess }: VendorDi
                       <SelectValue placeholder="Select payment method" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Not specified</SelectItem>
                       <SelectItem value="ACH">ACH</SelectItem>
                       <SelectItem value="Check">Check</SelectItem>
                       <SelectItem value="Credit Card">Credit Card</SelectItem>
