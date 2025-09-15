@@ -1,23 +1,30 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Users, Tag } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Edit, Trash2, Users, Tag, Eye, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { VendorDialog } from "@/components/VendorDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface Vendor {
   id: string;
   vendor_name: string;
-  contact_person: string;
-  email: string;
-  phone_number: string;
-  full_address: string;
+  contact_person?: string;
+  email?: string;
+  phone_number?: string;
+  full_address?: string;
+  status?: string;
+  primary_contact_name?: string;
+  primary_contact_email?: string;
+  primary_contact_phone?: string;
+  your_account_number?: string;
   created_at: string;
 }
 
@@ -28,6 +35,7 @@ interface ExpenseCategory {
 }
 
 export default function Vendors() {
+  const navigate = useNavigate();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,13 +45,6 @@ export default function Vendors() {
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | null>(null);
   const { toast } = useToast();
 
-  const [vendorForm, setVendorForm] = useState({
-    vendor_name: '',
-    contact_person: '',
-    email: '',
-    phone_number: '',
-    full_address: '',
-  });
 
   const [categoryForm, setCategoryForm] = useState({
     category_name: '',
@@ -78,13 +79,6 @@ export default function Vendors() {
   };
 
   const resetVendorForm = () => {
-    setVendorForm({
-      vendor_name: '',
-      contact_person: '',
-      email: '',
-      phone_number: '',
-      full_address: '',
-    });
     setSelectedVendor(null);
   };
 
@@ -95,56 +89,10 @@ export default function Vendors() {
     setSelectedCategory(null);
   };
 
-  const handleVendorSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!vendorForm.vendor_name.trim()) {
-      toast({
-        title: "Vendor name required",
-        description: "Please enter a vendor name",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      if (selectedVendor) {
-        // Update existing vendor
-        const { error } = await supabase
-          .from('vendors')
-          .update(vendorForm)
-          .eq('id', selectedVendor.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Vendor updated",
-          description: "The vendor has been updated successfully",
-        });
-      } else {
-        // Add new vendor
-        const { error } = await supabase
-          .from('vendors')
-          .insert([vendorForm]);
-
-        if (error) throw error;
-
-        toast({
-          title: "Vendor added",
-          description: "New vendor has been created successfully",
-        });
-      }
-
-      fetchData();
-      setShowAddVendor(false);
-      resetVendorForm();
-    } catch (error: any) {
-      toast({
-        title: "Error saving vendor",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+  const handleVendorSuccess = () => {
+    fetchData();
+    setShowAddVendor(false);
+    resetVendorForm();
   };
 
   const handleCategorySubmit = async (e: React.FormEvent) => {
@@ -201,13 +149,6 @@ export default function Vendors() {
 
   const editVendor = (vendor: Vendor) => {
     setSelectedVendor(vendor);
-    setVendorForm({
-      vendor_name: vendor.vendor_name,
-      contact_person: vendor.contact_person || '',
-      email: vendor.email || '',
-      phone_number: vendor.phone_number || '',
-      full_address: vendor.full_address || '',
-    });
     setShowAddVendor(true);
   };
 
@@ -331,17 +272,17 @@ export default function Vendors() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Vendor Name</TableHead>
-                      <TableHead>Contact Person</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Address</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Vendor Name</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Contact Person</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Account Number</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {vendors.length === 0 ? (
                       <TableRow>
@@ -351,21 +292,53 @@ export default function Vendors() {
                       </TableRow>
                     ) : (
                       vendors.map((vendor) => (
-                        <TableRow key={vendor.id}>
+                        <TableRow 
+                          key={vendor.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/vendors/${vendor.id}`)}
+                        >
                           <TableCell className="font-medium">{vendor.vendor_name}</TableCell>
-                          <TableCell>{vendor.contact_person || '-'}</TableCell>
-                          <TableCell>{vendor.email || '-'}</TableCell>
-                          <TableCell>{vendor.phone_number || '-'}</TableCell>
-                          <TableCell className="max-w-xs truncate">{vendor.full_address || '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant={vendor.status === 'active' ? 'default' : 'secondary'}>
+                              {vendor.status || 'active'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {vendor.primary_contact_name || vendor.contact_person || '-'}
+                          </TableCell>
+                          <TableCell>
+                            {vendor.primary_contact_email || vendor.email || '-'}
+                          </TableCell>
+                          <TableCell>{vendor.your_account_number || '-'}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <Button size="sm" variant="outline" onClick={() => editVendor(vendor)}>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/vendors/${vendor.id}`);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  editVendor(vendor);
+                                }}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button 
                                 size="sm" 
                                 variant="outline" 
-                                onClick={() => deleteVendor(vendor.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteVendor(vendor.id);
+                                }}
                                 className="text-destructive hover:text-destructive"
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -445,87 +418,16 @@ export default function Vendors() {
         </TabsContent>
       </Tabs>
 
-      {/* Add/Edit Vendor Dialog */}
-      <Dialog open={showAddVendor} onOpenChange={(open) => {
-        setShowAddVendor(open);
-        if (!open) resetVendorForm();
-      }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedVendor ? 'Edit Vendor' : 'Add New Vendor'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedVendor ? 'Update vendor information' : 'Enter vendor information to add them to your system'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleVendorSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="vendor_name">Vendor Name *</Label>
-              <Input
-                id="vendor_name"
-                value={vendorForm.vendor_name}
-                onChange={(e) => setVendorForm({ ...vendorForm, vendor_name: e.target.value })}
-                placeholder="Enter vendor name"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contact_person">Contact Person</Label>
-              <Input
-                id="contact_person"
-                value={vendorForm.contact_person}
-                onChange={(e) => setVendorForm({ ...vendorForm, contact_person: e.target.value })}
-                placeholder="Contact person name"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={vendorForm.email}
-                  onChange={(e) => setVendorForm({ ...vendorForm, email: e.target.value })}
-                  placeholder="Email address"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone_number">Phone Number</Label>
-                <Input
-                  id="phone_number"
-                  value={vendorForm.phone_number}
-                  onChange={(e) => setVendorForm({ ...vendorForm, phone_number: e.target.value })}
-                  placeholder="Phone number"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="full_address">Full Address</Label>
-              <Textarea
-                id="full_address"
-                value={vendorForm.full_address}
-                onChange={(e) => setVendorForm({ ...vendorForm, full_address: e.target.value })}
-                placeholder="Complete address"
-                rows={3}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAddVendor(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {selectedVendor ? 'Update Vendor' : 'Add Vendor'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Enhanced Vendor Dialog */}
+      <VendorDialog
+        open={showAddVendor}
+        onOpenChange={(open) => {
+          setShowAddVendor(open);
+          if (!open) resetVendorForm();
+        }}
+        vendor={selectedVendor}
+        onSuccess={handleVendorSuccess}
+      />
 
       {/* Add/Edit Category Dialog */}
       <Dialog open={showAddCategory} onOpenChange={(open) => {

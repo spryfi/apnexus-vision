@@ -10,6 +10,7 @@ import APFortress from "@/pages/APFortress";
 import AdminHub from "@/pages/AdminHub";
 import Transactions from "@/pages/Transactions";
 import Vendors from "@/pages/Vendors";
+import VendorDetail from "@/pages/VendorDetail";
 import Fuel from "@/pages/Fuel";
 import Staff from "@/pages/Staff";
 import Payroll from "@/pages/Payroll";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/admin" element={<Layout><AdminHub /></Layout>} />
             <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
             <Route path="/vendors" element={<Layout><Vendors /></Layout>} />
+            <Route path="/vendors/:id" element={<Layout><VendorDetail /></Layout>} />
             <Route path="/fuel" element={<Layout><Fuel /></Layout>} />
             <Route path="/staff" element={<Layout><Staff /></Layout>} />
             <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
