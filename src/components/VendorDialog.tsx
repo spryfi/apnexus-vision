@@ -189,14 +189,15 @@ export function VendorDialog({ open, onOpenChange, vendor, onSuccess }: VendorDi
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <Tabs defaultValue="contact" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="contact">Contact</TabsTrigger>
-              <TabsTrigger value="financial">Financial</TabsTrigger>
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="contact" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="contact">Contact</TabsTrigger>
+            <TabsTrigger value="financial">Financial</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+          </TabsList>
+
+          <form onSubmit={handleSubmit}>
 
             <TabsContent value="contact" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -370,22 +371,22 @@ export function VendorDialog({ open, onOpenChange, vendor, onSuccess }: VendorDi
                 />
               </div>
             </TabsContent>
-          </Tabs>
 
-          <DialogFooter className="mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : (vendor ? 'Update Vendor' : 'Add Vendor')}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : (vendor ? 'Update Vendor' : 'Add Vendor')}
+              </Button>
+            </DialogFooter>
+          </form>
+          </Tabs>
       </DialogContent>
     </Dialog>
   );
