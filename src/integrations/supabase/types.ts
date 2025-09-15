@@ -3537,6 +3537,47 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          expiry_date: string | null
+          file_name: string
+          file_url: string
+          id: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          expiry_date?: string | null
+          file_name: string
+          file_url: string
+          id?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          expiry_date?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_documents_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendors: {
         Row: {
           contact_person: string | null
@@ -3545,9 +3586,18 @@ export type Database = {
           email: string | null
           full_address: string | null
           id: string
+          internal_notes: string | null
+          payment_terms: string | null
           phone_number: string | null
+          preferred_payment_method: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          status: string | null
+          tax_id_ein: string | null
           updated_at: string
           vendor_name: string
+          your_account_number: string | null
         }
         Insert: {
           contact_person?: string | null
@@ -3556,9 +3606,18 @@ export type Database = {
           email?: string | null
           full_address?: string | null
           id?: string
+          internal_notes?: string | null
+          payment_terms?: string | null
           phone_number?: string | null
+          preferred_payment_method?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          status?: string | null
+          tax_id_ein?: string | null
           updated_at?: string
           vendor_name: string
+          your_account_number?: string | null
         }
         Update: {
           contact_person?: string | null
@@ -3567,9 +3626,18 @@ export type Database = {
           email?: string | null
           full_address?: string | null
           id?: string
+          internal_notes?: string | null
+          payment_terms?: string | null
           phone_number?: string | null
+          preferred_payment_method?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          status?: string | null
+          tax_id_ein?: string | null
           updated_at?: string
           vendor_name?: string
+          your_account_number?: string | null
         }
         Relationships: [
           {
