@@ -325,9 +325,9 @@ const CardManagement = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Select employee" />
                     </SelectTrigger>
-                    <SelectContent className="z-50 bg-background">
-                      <SelectItem value="">Unassigned</SelectItem>
-                      {employees.map((employee) => (
+                     <SelectContent className="z-50 bg-background">
+                       <SelectItem value="unassigned">Unassigned</SelectItem>
+                       {employees.map((employee) => (
                         <SelectItem key={employee.id} value={employee.id}>
                           {employee.employee_name}
                         </SelectItem>
