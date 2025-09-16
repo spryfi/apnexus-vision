@@ -67,6 +67,9 @@ interface ProcessedTransaction {
   merchantName: string;
   status: 'new' | 'duplicate' | 'flagged';
   flagReason?: string;
+  matchedVehicleId?: string;
+  matchedVehicleName?: string;
+  matchType: 'Direct ID Match' | 'Odometer Match' | 'Unmatched';
 }
 
 serve(async (req) => {
@@ -193,7 +196,7 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
   const transactionTimeStr = row['Transaction Time'] || '00:00:00';
   const fullDateTimeStr = `${transactionDateStr} ${transactionTimeStr}`;
   const transactionDate = new Date(fullDateTimeStr).toISOString();
-  const vehicleId = row['Custom Vehicle/Asset ID'];
+  const rawVehicleId = row['Custom Vehicle/Asset ID'];
   const employeeName = `${row['Driver First Name'] || ''} ${row['Driver Last Name'] || ''}`.trim();
   const gallons = parseFloat(row['Units']) || 0;
   const costPerGallon = parseFloat(row['Unit Cost']) || 0;
@@ -204,7 +207,7 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
   console.log('Parsed transaction data:', {
     sourceTransactionId,
     transactionDate,
-    vehicleId,
+    rawVehicleId,
     employeeName,
     gallons,
     costPerGallon,
@@ -212,6 +215,10 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
     odometer,
     merchantName
   });
+
+  // Intelligent Vehicle Matching
+  const matchResult = await performVehicleMatching(rawVehicleId, odometer, supabase);
+  console.log('Vehicle matching result:', matchResult);
 
   // Check for duplicate
   const { data: existing, error: duplicateError } = await supabase
@@ -228,14 +235,17 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
     return {
       sourceTransactionId,
       transactionDate,
-      vehicleId,
+      vehicleId: matchResult.vehicleId,
       employeeName,
       gallons,
       costPerGallon,
       totalCost,
       odometer,
       merchantName,
-      status: 'duplicate'
+      status: 'duplicate',
+      matchedVehicleId: matchResult.matchedVehicleId,
+      matchedVehicleName: matchResult.matchedVehicleName,
+      matchType: matchResult.matchType
     };
   }
 
@@ -248,7 +258,7 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
   } else {
     // AI Anomaly Detection for all other employees
     flagCheck = await checkForAnomalies(
-      vehicleId,
+      matchResult.vehicleId,
       employeeName,
       gallons,
       totalCost,
@@ -261,7 +271,7 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
   return {
     sourceTransactionId,
     transactionDate,
-    vehicleId,
+    vehicleId: matchResult.vehicleId,
     employeeName,
     gallons,
     costPerGallon,
@@ -269,7 +279,76 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
     odometer,
     merchantName,
     status: flagCheck.shouldFlag ? 'flagged' : 'new',
-    flagReason: flagCheck.reason
+    flagReason: flagCheck.reason,
+    matchedVehicleId: matchResult.matchedVehicleId,
+    matchedVehicleName: matchResult.matchedVehicleName,
+    matchType: matchResult.matchType
+  };
+}
+
+async function performVehicleMatching(rawVehicleId: string, odometer: number, supabase: any): Promise<{
+  vehicleId: string;
+  matchedVehicleId?: string;
+  matchedVehicleName?: string;
+  matchType: 'Direct ID Match' | 'Odometer Match' | 'Unmatched';
+}> {
+  console.log('Starting vehicle matching for:', { rawVehicleId, odometer });
+
+  // Check for Direct ID Match first (Happy Path)
+  if (rawVehicleId && rawVehicleId.trim()) {
+    const { data: directMatch, error } = await supabase
+      .from('vehicles')
+      .select('id, asset_id, make, model, year')
+      .eq('asset_id', rawVehicleId.trim())
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking direct vehicle match:', error);
+    }
+
+    if (directMatch) {
+      console.log('Direct ID match found:', directMatch);
+      return {
+        vehicleId: rawVehicleId.trim(),
+        matchedVehicleId: directMatch.id,
+        matchedVehicleName: `${directMatch.year} ${directMatch.make} ${directMatch.model}`,
+        matchType: 'Direct ID Match'
+      };
+    }
+  }
+
+  // Intelligent Odometer Matching (Smart Path)
+  if (odometer > 0) {
+    console.log('Attempting odometer-based matching for odometer:', odometer);
+    
+    const { data: odometerMatches, error } = await supabase
+      .from('vehicles')
+      .select('id, asset_id, make, model, year, current_odometer')
+      .lte('current_odometer', odometer)
+      .order('current_odometer', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('Error checking odometer matches:', error);
+    }
+
+    if (odometerMatches && odometerMatches.length > 0) {
+      const match = odometerMatches[0];
+      console.log('Odometer match found:', match);
+      return {
+        vehicleId: match.asset_id || match.id,
+        matchedVehicleId: match.id,
+        matchedVehicleName: `${match.year} ${match.make} ${match.model}`,
+        matchType: 'Odometer Match'
+      };
+    }
+  }
+
+  // No match found
+  console.log('No vehicle match found');
+  return {
+    vehicleId: rawVehicleId || '',
+    matchType: 'Unmatched'
   };
 }
 

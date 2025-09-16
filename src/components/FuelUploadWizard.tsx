@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, CheckCircle, AlertTriangle, Flag, Loader2 } from "lucide-react";
+import { Upload, CheckCircle, AlertTriangle, Flag, Loader2, Sparkles, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProcessedTransaction {
   sourceTransactionId: string;
@@ -20,6 +22,9 @@ interface ProcessedTransaction {
   merchantName: string;
   status: 'new' | 'duplicate' | 'flagged';
   flagReason?: string;
+  matchedVehicleId?: string;
+  matchedVehicleName?: string;
+  matchType: 'Direct ID Match' | 'Odometer Match' | 'Unmatched';
 }
 
 interface FuelUploadWizardProps {
@@ -36,7 +41,29 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     summary: { total: number; new: number; duplicate: number; flagged: number };
   } | null>(null);
   const [importing, setImporting] = useState(false);
+  const [vehicles, setVehicles] = useState<Array<{id: string; asset_id: string; make: string; model: string; year: number}>>([]);
+  const [transactionOverrides, setTransactionOverrides] = useState<Record<string, string>>({});
   const { toast } = useToast();
+
+  // Fetch vehicles for dropdown selection
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('id, asset_id, make, model, year')
+        .order('asset_id');
+      
+      if (error) {
+        console.error('Error fetching vehicles:', error);
+      } else {
+        setVehicles(data || []);
+      }
+    };
+
+    if (isOpen) {
+      fetchVehicles();
+    }
+  }, [isOpen]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -96,30 +123,46 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     
     try {
       console.log('Starting import process...');
-      const newTransactions = processedData.transactions
+      
+      // Apply user overrides to transactions
+      const finalTransactions = processedData.transactions
         .filter(t => t.status === 'new' || t.status === 'flagged')
-        .map(t => ({
-          source_transaction_id: t.sourceTransactionId,
-          transaction_date: t.transactionDate,
-          vehicle_id: t.vehicleId,
-          employee_name: t.employeeName,
-          gallons: t.gallons,
-          cost_per_gallon: t.costPerGallon,
-          total_cost: t.totalCost,
-          odometer: t.odometer,
-          merchant_name: t.merchantName,
-          status: t.status === 'flagged' ? 'Flagged for Review' : 'Verified',
-          flag_reason: t.flagReason
-        }));
+        .map(t => {
+          const overrideVehicleId = transactionOverrides[t.sourceTransactionId];
+          let finalVehicleId = t.vehicleId;
+          let finalMatchedVehicleId = t.matchedVehicleId;
 
-      console.log('Inserting transactions:', newTransactions);
+          if (overrideVehicleId) {
+            const overrideVehicle = vehicles.find(v => v.id === overrideVehicleId);
+            finalVehicleId = overrideVehicle?.asset_id || overrideVehicleId;
+            finalMatchedVehicleId = overrideVehicleId;
+          }
 
-      const { error } = await supabase
-        .from('fuel_transactions_new')
-        .insert(newTransactions);
+          return {
+            source_transaction_id: t.sourceTransactionId,
+            transaction_date: t.transactionDate,
+            vehicle_id: finalVehicleId,
+            employee_name: t.employeeName,
+            gallons: t.gallons,
+            cost_per_gallon: t.costPerGallon,
+            total_cost: t.totalCost,
+            odometer: t.odometer,
+            merchant_name: t.merchantName,
+            status: t.status === 'flagged' ? 'Flagged for Review' : 'Verified',
+            flag_reason: t.flagReason,
+            matched_vehicle_id: finalMatchedVehicleId
+          };
+        });
+
+      console.log('Inserting transactions:', finalTransactions);
+
+      // Call new import function that handles both insertion and odometer updates
+      const { data, error } = await supabase.functions.invoke('import-verified-fuel-transactions', {
+        body: { transactions: finalTransactions }
+      });
 
       if (error) {
-        console.error('Database insertion error:', error);
+        console.error('Import function error:', error);
         throw error;
       }
 
@@ -127,7 +170,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
       
       toast({
         title: "Import Successful",
-        description: `Successfully imported ${newTransactions.length} new fuel transactions.`,
+        description: `Successfully imported ${finalTransactions.length} new fuel transactions and updated vehicle odometers.`,
       });
 
       onSuccess();
@@ -148,7 +191,19 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     setStep('upload');
     setFile(null);
     setProcessedData(null);
+    setTransactionOverrides({});
     onClose();
+  };
+
+  const getVehicleDisplayName = (vehicle: {make: string; model: string; year: number; asset_id: string}) => {
+    return `${vehicle.asset_id} - ${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+  };
+
+  const handleVehicleOverride = (transactionId: string, vehicleId: string) => {
+    setTransactionOverrides(prev => ({
+      ...prev,
+      [transactionId]: vehicleId
+    }));
   };
 
   const getStatusIcon = (status: string) => {
@@ -283,48 +338,131 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
             </div>
 
             <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Gallons</TableHead>
-                    <TableHead>Total Cost</TableHead>
-                    <TableHead>Reason</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {processedData.transactions.map((transaction, index) => (
-                    <TableRow 
-                      key={index}
-                      className={
-                        transaction.status === 'new' ? 'bg-green-50' :
-                        transaction.status === 'duplicate' ? 'bg-yellow-50' :
-                        'bg-red-50'
-                      }
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(transaction.status)}
-                          {getStatusBadge(transaction.status)}
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatDate(transaction.transactionDate)}</TableCell>
-                      <TableCell>{transaction.vehicleId}</TableCell>
-                      <TableCell>{transaction.employeeName}</TableCell>
-                      <TableCell>{transaction.gallons.toFixed(2)}</TableCell>
-                      <TableCell>{formatCurrency(transaction.totalCost)}</TableCell>
-                      <TableCell>
-                        {transaction.status === 'duplicate' && 'Already exists'}
-                        {transaction.status === 'flagged' && transaction.flagReason}
-                        {transaction.status === 'new' && '✓ Ready to import'}
-                      </TableCell>
+              <TooltipProvider>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Matched Vehicle</TableHead>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Gallons</TableHead>
+                      <TableHead>Total Cost</TableHead>
+                      <TableHead>Reason</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {processedData.transactions.map((transaction, index) => {
+                      const overrideVehicleId = transactionOverrides[transaction.sourceTransactionId];
+                      const displayVehicle = overrideVehicleId 
+                        ? vehicles.find(v => v.id === overrideVehicleId)
+                        : null;
+                      
+                      return (
+                        <TableRow 
+                          key={index}
+                          className={
+                            transaction.status === 'new' ? 'bg-green-50' :
+                            transaction.status === 'duplicate' ? 'bg-yellow-50' :
+                            'bg-red-50'
+                          }
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(transaction.status)}
+                              {getStatusBadge(transaction.status)}
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatDate(transaction.transactionDate)}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {transaction.matchType === 'Direct ID Match' && !overrideVehicleId && (
+                                <span>{transaction.matchedVehicleName || transaction.vehicleId}</span>
+                              )}
+                              
+                              {transaction.matchType === 'Odometer Match' && !overrideVehicleId && (
+                                <div className="flex items-center gap-1">
+                                  <span>{transaction.matchedVehicleName}</span>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Sparkles className="h-3 w-3 text-blue-500" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Intelligently matched based on odometer reading</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              )}
+                              
+                              {transaction.matchType === 'Unmatched' && !overrideVehicleId && (
+                                <Select onValueChange={(value) => handleVehicleOverride(transaction.sourceTransactionId, value)}>
+                                  <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="Select vehicle..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {vehicles.map((vehicle) => (
+                                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                                        {getVehicleDisplayName(vehicle)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              
+                              {overrideVehicleId && displayVehicle && (
+                                <div className="flex items-center gap-1">
+                                  <span>{getVehicleDisplayName(displayVehicle)}</span>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => handleVehicleOverride(transaction.sourceTransactionId, '')}
+                                        className="h-6 w-6 p-0"
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Click to change selection</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              )}
+                              
+                              {(transaction.matchType === 'Direct ID Match' || transaction.matchType === 'Odometer Match') && !overrideVehicleId && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => {}} // This would open override selection
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Click to override vehicle selection</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{transaction.employeeName}</TableCell>
+                          <TableCell>{transaction.gallons.toFixed(2)}</TableCell>
+                          <TableCell>{formatCurrency(transaction.totalCost)}</TableCell>
+                          <TableCell>
+                            {transaction.status === 'duplicate' && 'Already exists'}
+                            {transaction.status === 'flagged' && transaction.flagReason}
+                            {transaction.status === 'new' && '✓ Ready to import'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TooltipProvider>
             </div>
 
             <div className="flex justify-between">
