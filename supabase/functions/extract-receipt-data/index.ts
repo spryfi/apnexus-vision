@@ -8,15 +8,41 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface RequestBody {
+  document_url?: string;
+  fileUrl?: string;
+  extractionType?: string;
+}
+
 interface ExtractedData {
   vendor_name?: string;
+  vendorName?: string;
   transaction_date?: string;
+  transactionDate?: string;
+  serviceDate?: string;
   total_amount?: number;
+  totalAmount?: number;
+  totalCost?: number;
+  odometerReading?: number;
   line_items?: Array<{
     description: string;
     quantity: number;
     unit_price: number;
     total_price: number;
+    part_number?: string;
+    partNumber?: string;
+    unitPrice?: number;
+    totalPrice?: number;
+  }>;
+  lineItems?: Array<{
+    description: string;
+    quantity: number;
+    unit_price?: number;
+    unitPrice?: number;
+    total_price?: number;
+    totalPrice?: number;
+    part_number?: string;
+    partNumber?: string;
   }>;
 }
 
@@ -31,14 +57,77 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const { document_url } = await req.json();
+    const { document_url, fileUrl, extractionType = 'expense' }: RequestBody = await req.json();
+    const documentUrl = document_url || fileUrl;
     
-    if (!document_url) {
+    if (!documentUrl) {
       throw new Error('Document URL is required');
     }
 
-    console.log('Processing document for AI extraction:', document_url);
+    console.log('Processing document for AI extraction:', documentUrl, 'Type:', extractionType);
 
+    // Prepare the prompt based on extraction type
+    let systemPrompt = '';
+    
+    if (extractionType === 'maintenance') {
+      systemPrompt = `You are an expert service advisor analyzing vehicle maintenance invoices. 
+      
+      Extract the following information from this service invoice:
+      1. Service Provider's Name
+      2. Service Date (format: YYYY-MM-DD)
+      3. Vehicle's Odometer reading (if visible)
+      4. Final Total Cost
+      5. All individual line items for parts and labor with:
+         - Description (e.g., "Oil Change", "Air Filter Replacement")
+         - Part number (if available)
+         - Quantity
+         - Unit price
+         - Total price for that line item
+      
+      Return as JSON with this exact structure:
+      {
+        "vendorName": "string",
+        "serviceDate": "YYYY-MM-DD",
+        "odometerReading": number,
+        "totalCost": number,
+        "lineItems": [
+          {
+            "description": "string",
+            "partNumber": "string",
+            "quantity": number,
+            "unitPrice": number,
+            "totalPrice": number
+          }
+        ]
+      }`;
+    } else {
+      systemPrompt = `You are an expert accounts payable clerk analyzing business receipts and invoices.
+      
+      Extract the following information:
+      1. Vendor Name
+      2. Transaction Date (format: YYYY-MM-DD)
+      3. Final Total Amount
+      4. All individual line items with:
+         - Description
+         - Quantity
+         - Price per unit
+         - Total price for that line item
+      
+      Return as JSON with this exact structure:
+      {
+        "vendorName": "string",
+        "transactionDate": "YYYY-MM-DD",
+        "totalAmount": number,
+        "lineItems": [
+          {
+            "description": "string",
+            "quantity": number,
+            "unitPrice": number,
+            "totalPrice": number
+          }
+        ]
+      }`;
+    }
     // Call OpenAI Vision API to analyze the document
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -51,41 +140,21 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert accounts payable clerk. Analyze this receipt/invoice and extract structured data. 
-
-Return a JSON object with this exact structure:
-{
-  "vendor_name": "string",
-  "transaction_date": "YYYY-MM-DD",
-  "total_amount": number,
-  "line_items": [
-    {
-      "description": "string",
-      "quantity": number,
-      "unit_price": number,
-      "total_price": number
-    }
-  ]
-}
-
-Rules:
-- Extract ALL individual line items with their descriptions, quantities, and prices
-- Ensure quantity * unit_price = total_price for each line item
-- If no line items are visible, create one item with the description "General expense" and the total amount
-- Use the exact vendor name as shown on the document
-- Date must be in YYYY-MM-DD format`
+            content: systemPrompt
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Please analyze this receipt/invoice and extract the vendor name, transaction date, total amount, and all line items with their descriptions, quantities, and prices.'
+                text: extractionType === 'maintenance' 
+                  ? 'Please analyze this vehicle service invoice and extract the service provider, date, odometer reading, total cost, and all line items.'
+                  : 'Please analyze this receipt/invoice and extract the vendor name, transaction date, total amount, and all line items with their descriptions, quantities, and prices.'
               },
               {
                 type: 'image_url',
                 image_url: {
-                  url: document_url
+                  url: documentUrl
                 }
               }
             ]
@@ -145,7 +214,10 @@ Rules:
 
     console.log('Cleaned extracted data:', cleanedData);
 
-    return new Response(JSON.stringify(cleanedData), {
+    return new Response(JSON.stringify({
+      extractedData: cleanedData,
+      message: 'Receipt data extracted successfully'
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

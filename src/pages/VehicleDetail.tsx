@@ -273,7 +273,7 @@ const VehicleDetail: React.FC = () => {
                 <CardTitle>Maintenance Records</CardTitle>
                 <CardDescription>Service history and repair records for this vehicle</CardDescription>
               </div>
-              <Button onClick={() => setShowAddMaintenanceDialog(true)}>
+              <Button onClick={() => navigate(`/fleet/${id}/add-maintenance`)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Maintenance Record
               </Button>
@@ -284,7 +284,7 @@ const VehicleDetail: React.FC = () => {
                   <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-muted-foreground mb-2">No maintenance records</h3>
                   <p className="text-sm text-muted-foreground mb-4">Start tracking maintenance for this vehicle</p>
-                  <Button onClick={() => setShowAddMaintenanceDialog(true)}>
+                  <Button onClick={() => navigate(`/fleet/${id}/add-maintenance`)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Record
                   </Button>

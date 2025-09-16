@@ -1680,6 +1680,50 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_line_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          maintenance_record_id: string
+          part_number: string | null
+          quantity: number
+          total_price: number | null
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          maintenance_record_id: string
+          part_number?: string | null
+          quantity?: number
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          maintenance_record_id?: string
+          part_number?: string | null
+          quantity?: number
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_line_items_maintenance_record_id_fkey"
+            columns: ["maintenance_record_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_records: {
         Row: {
           cost: number
@@ -1690,6 +1734,8 @@ export type Database = {
           service_date: string
           service_description: string
           service_provider_vendor_id: string | null
+          service_summary: string | null
+          status: string | null
           updated_at: string
           vehicle_id: string
         }
@@ -1702,6 +1748,8 @@ export type Database = {
           service_date: string
           service_description: string
           service_provider_vendor_id?: string | null
+          service_summary?: string | null
+          status?: string | null
           updated_at?: string
           vehicle_id: string
         }
@@ -1714,6 +1762,8 @@ export type Database = {
           service_date?: string
           service_description?: string
           service_provider_vendor_id?: string | null
+          service_summary?: string | null
+          status?: string | null
           updated_at?: string
           vehicle_id?: string
         }

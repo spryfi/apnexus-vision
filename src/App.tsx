@@ -9,6 +9,7 @@ import Layout from "@/components/Layout";
 import APFortress from "@/pages/APFortress";
 import AdminHub from "@/pages/AdminHub";
 import NewExpense from "@/pages/NewExpense";
+import AddMaintenanceRecord from "@/pages/AddMaintenanceRecord";
 import Transactions from "@/pages/Transactions";
 import Vendors from "@/pages/Vendors";
 import VendorDetail from "@/pages/VendorDetail";
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
             <Route path="/fleet" element={<Layout><Fleet /></Layout>} />
             <Route path="/fleet/:id" element={<Layout><VehicleDetail /></Layout>} />
+            <Route path="/fleet/:vehicleId/add-maintenance" element={<Layout><AddMaintenanceRecord /></Layout>} />
             <Route path="/settings" element={<Layout><Settings /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
