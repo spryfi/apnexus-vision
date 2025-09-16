@@ -3289,6 +3289,47 @@ export type Database = {
           },
         ]
       }
+      transaction_line_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          quantity: number
+          total_price: number
+          transaction_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          quantity?: number
+          total_price: number
+          transaction_id: string
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          quantity?: number
+          total_price?: number
+          transaction_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_line_items_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           ai_flag_reason: string | null
@@ -3308,8 +3349,8 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_source: string | null
           payment_source_detail: string | null
-          purchase_description: string
           status: Database["public"]["Enums"]["transaction_status"]
+          transaction_memo: string | null
           updated_at: string
           vendor_id: string
         }
@@ -3331,8 +3372,8 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_source?: string | null
           payment_source_detail?: string | null
-          purchase_description: string
           status?: Database["public"]["Enums"]["transaction_status"]
+          transaction_memo?: string | null
           updated_at?: string
           vendor_id: string
         }
@@ -3354,8 +3395,8 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_source?: string | null
           payment_source_detail?: string | null
-          purchase_description?: string
           status?: Database["public"]["Enums"]["transaction_status"]
+          transaction_memo?: string | null
           updated_at?: string
           vendor_id?: string
         }

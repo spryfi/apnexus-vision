@@ -18,7 +18,7 @@ interface Transaction {
   expense_categories: { category_name: string };
   invoice_date: string;
   due_date: string;
-  purchase_description: string;
+  transaction_memo?: string;
   invoice_receipt_url: string;
   ai_flagged_status: boolean;
   ai_flag_reason: string;
@@ -160,7 +160,7 @@ export default function APFortress() {
                           Created: {formatDate(transaction.created_at)}
                         </div>
                         <div className="text-sm">
-                          Description: {transaction.purchase_description || 'No description provided'}
+                          Description: {transaction.transaction_memo || 'No description provided'}
                         </div>
                       </div>
                       <Button size="sm" className="bg-orange-600 hover:bg-orange-700">

@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
 import APFortress from "@/pages/APFortress";
 import AdminHub from "@/pages/AdminHub";
+import NewExpense from "@/pages/NewExpense";
 import Transactions from "@/pages/Transactions";
 import Vendors from "@/pages/Vendors";
 import VendorDetail from "@/pages/VendorDetail";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<Layout><APFortress /></Layout>} />
             <Route path="/admin" element={<Layout><AdminHub /></Layout>} />
+            <Route path="/new-expense" element={<Layout><NewExpense /></Layout>} />
             <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
             <Route path="/vendors" element={<Layout><Vendors /></Layout>} />
             <Route path="/vendors/:id" element={<Layout><VendorDetail /></Layout>} />

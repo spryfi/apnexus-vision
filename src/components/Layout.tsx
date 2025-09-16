@@ -13,6 +13,7 @@ import TaskStatusCards from "@/components/TaskStatusCards";
 
 const navigation = [
   { name: "AP-Fortress", href: "/", icon: Shield },
+  { name: "➕ New Expense", href: "/new-expense", icon: Receipt },
   { name: "Admin Hub", href: "/admin", icon: Settings },
   { name: "Legacy Transactions", href: "/transactions", icon: Receipt },
   { name: "Vendors & Categories", href: "/vendors", icon: Users },

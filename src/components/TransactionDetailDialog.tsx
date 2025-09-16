@@ -19,7 +19,7 @@ interface Transaction {
   invoice_date: string;
   due_date: string;
   amount: number;
-  purchase_description: string;
+  transaction_memo?: string;
   payment_method: string;
   payment_source: string;
   check_number: string;
@@ -96,7 +96,7 @@ export function TransactionDetailDialog({
         });
         return;
       }
-      if (!transaction.purchase_description) {
+      if (!transaction.transaction_memo) {
         toast({
           title: "Cannot mark as paid",
           description: "Purchase description is required before marking as paid",
@@ -300,7 +300,7 @@ export function TransactionDetailDialog({
           {/* Purchase Description */}
           <div>
             <Label className="text-sm font-medium text-muted-foreground">Purchase Description</Label>
-            <p className="text-sm mt-1 p-3 bg-muted rounded-md">{transaction.purchase_description}</p>
+            <p className="text-sm mt-1 p-3 bg-muted rounded-md">{transaction.transaction_memo}</p>
           </div>
 
           {/* Receipt */}

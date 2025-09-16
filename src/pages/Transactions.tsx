@@ -22,7 +22,7 @@ interface Transaction {
   invoice_date: string;
   due_date: string;
   amount: number;
-  purchase_description: string;
+  transaction_memo?: string;
   payment_method: string;
   payment_source: string;
   check_number: string;
@@ -126,7 +126,7 @@ export default function Transactions() {
     if (filters.search) {
       filtered = filtered.filter(t => 
         t.vendors?.vendor_name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        t.purchase_description.toLowerCase().includes(filters.search.toLowerCase()) ||
+        t.transaction_memo?.toLowerCase().includes(filters.search.toLowerCase()) ||
         t.invoice_number?.toLowerCase().includes(filters.search.toLowerCase())
       );
     }

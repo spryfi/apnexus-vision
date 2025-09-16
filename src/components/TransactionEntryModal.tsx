@@ -19,7 +19,7 @@ interface Transaction {
   expense_categories: { category_name: string };
   invoice_date: string;
   due_date: string;
-  purchase_description: string;
+  transaction_memo?: string;
   invoice_receipt_url: string;
   payment_method: string;
   payment_source_detail: string;
@@ -53,7 +53,7 @@ export function TransactionEntryModal({
     amount: transaction.amount || 0,
     invoice_date: transaction.invoice_date || '',
     due_date: transaction.due_date || '',
-    purchase_description: transaction.purchase_description || '',
+    transaction_memo: transaction.transaction_memo || '',
     payment_method: transaction.payment_method || '',
     payment_source_detail: transaction.payment_source_detail || '',
     invoice_receipt_url: transaction.invoice_receipt_url || '',
@@ -95,7 +95,7 @@ export function TransactionEntryModal({
       formData.expense_category_id &&
       formData.amount > 0 &&
       formData.invoice_date &&
-      formData.purchase_description.length >= 20 &&
+      formData.transaction_memo && formData.transaction_memo.length >= 20 &&
       formData.payment_method &&
       formData.payment_source_detail &&
       formData.invoice_receipt_url
@@ -124,7 +124,7 @@ export function TransactionEntryModal({
           amount: formData.amount,
           invoice_date: formData.invoice_date,
           due_date: formData.due_date,
-          purchase_description: formData.purchase_description,
+          transaction_memo: formData.transaction_memo,
           payment_source_detail: formData.payment_source_detail,
           invoice_receipt_url: formData.invoice_receipt_url,
           status: 'Pending Approval'
@@ -338,13 +338,13 @@ export function TransactionEntryModal({
             <Label htmlFor="description">Purchase Description * (minimum 20 characters)</Label>
             <Textarea
               id="description"
-              value={formData.purchase_description}
-              onChange={(e) => setFormData({...formData, purchase_description: e.target.value})}
+              value={formData.transaction_memo}
+              onChange={(e) => setFormData({...formData, transaction_memo: e.target.value})}
               placeholder="Detailed description of what this purchase was for..."
               rows={3}
             />
             <div className="text-sm text-muted-foreground">
-              Characters: {formData.purchase_description.length}/20 minimum
+              Characters: {formData.transaction_memo?.length || 0}/20 minimum
             </div>
           </div>
 
