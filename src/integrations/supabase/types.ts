@@ -2284,6 +2284,83 @@ export type Database = {
         }
         Relationships: []
       }
+      project_antennas: {
+        Row: {
+          azimuth_center_deg: number | null
+          beamwidth_deg: number | null
+          created_at: string | null
+          id: string
+          name: string
+          pattern_rows: Json | null
+          pattern_url: string | null
+          peak_gain_dbi: number | null
+          project_id: string
+        }
+        Insert: {
+          azimuth_center_deg?: number | null
+          beamwidth_deg?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          pattern_rows?: Json | null
+          pattern_url?: string | null
+          peak_gain_dbi?: number | null
+          project_id: string
+        }
+        Update: {
+          azimuth_center_deg?: number | null
+          beamwidth_deg?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          pattern_rows?: Json | null
+          pattern_url?: string | null
+          peak_gain_dbi?: number | null
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_antennas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          inputs: Json
+          name: string
+          owner: string | null
+          public: boolean | null
+          results: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          inputs: Json
+          name: string
+          owner?: string | null
+          public?: boolean | null
+          results: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          inputs?: Json
+          name?: string
+          owner?: string | null
+          public?: boolean | null
+          results?: Json
+        }
+        Relationships: []
+      }
       promo_codes: {
         Row: {
           code: string
