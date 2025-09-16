@@ -46,8 +46,18 @@ export function TransactionDetailDialog({
 }: TransactionDetailDialogProps) {
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const { userProfile } = useAuth();
+
+  useState(() => {
+    checkAdminStatus();
+  });
+
+  const checkAdminStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setIsAdmin(user?.email === 'paul@spryfi.net');
+  };
 
   const [formData, setFormData] = useState({
     status: transaction.status,
@@ -88,7 +98,7 @@ export function TransactionDetailDialog({
   const handleStatusChange = async (newStatus: string) => {
     // Validation rules
     if (newStatus === 'Paid') {
-      if (!transaction.invoice_receipt_url) {
+      if (!transaction.invoice_receipt_url && !isAdmin) {
         toast({
           title: "Cannot mark as paid",
           description: "Invoice/receipt scan is required before marking as paid",
@@ -120,6 +130,17 @@ export function TransactionDetailDialog({
         .eq('id', transaction.id);
 
       if (error) throw error;
+
+      // Trigger AI audit for paid transactions
+      if (newStatus === 'Paid') {
+        try {
+          await supabase.functions.invoke('ai-audit-transaction', {
+            body: { transactionId: transaction.id }
+          });
+        } catch (auditError) {
+          console.log('AI audit failed (non-blocking):', auditError);
+        }
+      }
 
       toast({
         title: "Status updated",
@@ -268,8 +289,18 @@ export function TransactionDetailDialog({
                       <SelectContent>
                         <SelectItem value="Pending Approval">Pending Approval</SelectItem>
                         <SelectItem value="Approved for Payment">Approved for Payment</SelectItem>
-                        <SelectItem value="Paid">Paid</SelectItem>
-                        <SelectItem value="Reconciled">Reconciled</SelectItem>
+                        <SelectItem 
+                          value="Paid" 
+                          disabled={!transaction.invoice_receipt_url && !isAdmin}
+                        >
+                          Paid {!transaction.invoice_receipt_url && !isAdmin && "(Receipt Required)"}
+                        </SelectItem>
+                        <SelectItem 
+                          value="Reconciled"
+                          disabled={!transaction.invoice_receipt_url && !isAdmin}
+                        >
+                          Reconciled {!transaction.invoice_receipt_url && !isAdmin && "(Receipt Required)"}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

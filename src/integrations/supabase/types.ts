@@ -3338,6 +3338,7 @@ export type Database = {
           audit_trail: string | null
           check_number: string | null
           created_at: string
+          document_required_override: boolean | null
           due_date: string | null
           employee_id: string
           expense_category_id: string
@@ -3345,6 +3346,8 @@ export type Database = {
           invoice_date: string
           invoice_number: string | null
           invoice_receipt_url: string | null
+          override_by: string | null
+          override_reason: string | null
           paid_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_source: string | null
@@ -3361,6 +3364,7 @@ export type Database = {
           audit_trail?: string | null
           check_number?: string | null
           created_at?: string
+          document_required_override?: boolean | null
           due_date?: string | null
           employee_id: string
           expense_category_id: string
@@ -3368,6 +3372,8 @@ export type Database = {
           invoice_date: string
           invoice_number?: string | null
           invoice_receipt_url?: string | null
+          override_by?: string | null
+          override_reason?: string | null
           paid_date?: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           payment_source?: string | null
@@ -3384,6 +3390,7 @@ export type Database = {
           audit_trail?: string | null
           check_number?: string | null
           created_at?: string
+          document_required_override?: boolean | null
           due_date?: string | null
           employee_id?: string
           expense_category_id?: string
@@ -3391,6 +3398,8 @@ export type Database = {
           invoice_date?: string
           invoice_number?: string | null
           invoice_receipt_url?: string | null
+          override_by?: string | null
+          override_reason?: string | null
           paid_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           payment_source?: string | null

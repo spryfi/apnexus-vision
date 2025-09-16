@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TransactionDetailDialog } from "@/components/TransactionDetailDialog";
 import CardManagement from "@/components/CardManagement";
 import TaskDashboard from "@/components/TaskDashboard";
+import ViolationQueue from "@/components/ViolationQueue";
 
 interface Transaction {
   id: string;
@@ -330,25 +331,29 @@ export default function AdminHub() {
 
         {/* Management Tab */}
         <TabsContent value="management">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Admin System Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">Advanced admin tools coming soon</p>
-                <p className="text-sm text-muted-foreground">
-                  For general settings like Company Cards and Task Dashboard, 
-                  <br />
-                  please use the Settings page in the main navigation.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <ViolationQueue />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Admin System Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">Advanced admin tools coming soon</p>
+                  <p className="text-sm text-muted-foreground">
+                    For general settings like Company Cards and Task Dashboard, 
+                    <br />
+                    please use the Settings page in the main navigation.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

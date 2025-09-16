@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ViolationBanner from "./ViolationBanner";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -155,6 +156,7 @@ export default function Layout({ children }: LayoutProps) {
         </header>
         <main className="flex-1 overflow-auto">
           <div className="w-full px-4 py-6">
+            <ViolationBanner />
             {children}
           </div>
         </main>
@@ -172,6 +174,7 @@ export default function Layout({ children }: LayoutProps) {
             <SidebarTrigger />
           </header>
           <main className="flex-1 p-6">
+            <ViolationBanner />
             {children}
           </main>
         </div>

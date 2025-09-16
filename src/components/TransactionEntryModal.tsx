@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useForm, useWatch } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,26 @@ export function TransactionEntryModal({
   const [employees, setEmployees] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const { toast } = useToast();
+
+  const form = useForm({
+    defaultValues: {
+      vendor_id: transaction.vendor_id || '',
+      employee_id: transaction.employee_id || '',
+      expense_category_id: transaction.expense_category_id || '',
+      amount: transaction.amount || 0,
+      invoice_date: transaction.invoice_date || '',
+      due_date: transaction.due_date || '',
+      transaction_memo: transaction.transaction_memo || '',
+      payment_method: transaction.payment_method || '',
+      payment_source_detail: transaction.payment_source_detail || '',
+      invoice_receipt_url: transaction.invoice_receipt_url || '',
+      status: 'Pending Approval'
+    }
+  });
+
+  const watchedValues = useWatch({ control: form.control });
+
   const [formData, setFormData] = useState({
     vendor_id: transaction.vendor_id || '',
     employee_id: transaction.employee_id || '',
@@ -58,7 +79,6 @@ export function TransactionEntryModal({
     payment_source_detail: transaction.payment_source_detail || '',
     invoice_receipt_url: transaction.invoice_receipt_url || '',
   });
-  const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
