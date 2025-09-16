@@ -1086,8 +1086,9 @@ export type Database = {
           status: string
           total_cost: number
           transaction_date: string
+          transaction_type: string
           updated_at: string
-          vehicle_id: string
+          vehicle_id: string | null
         }
         Insert: {
           cost_per_gallon: number
@@ -1102,8 +1103,9 @@ export type Database = {
           status?: string
           total_cost: number
           transaction_date: string
+          transaction_type?: string
           updated_at?: string
-          vehicle_id: string
+          vehicle_id?: string | null
         }
         Update: {
           cost_per_gallon?: number
@@ -1118,8 +1120,9 @@ export type Database = {
           status?: string
           total_cost?: number
           transaction_date?: string
+          transaction_type?: string
           updated_at?: string
-          vehicle_id?: string
+          vehicle_id?: string | null
         }
         Relationships: []
       }

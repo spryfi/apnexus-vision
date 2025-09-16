@@ -10,7 +10,7 @@ const corsHeaders = {
 interface VerifiedTransaction {
   source_transaction_id: string;
   transaction_date: string;
-  vehicle_id: string;
+  vehicle_id: string | null;
   employee_name: string;
   gallons: number;
   cost_per_gallon: number;
@@ -20,6 +20,7 @@ interface VerifiedTransaction {
   status: string;
   flag_reason?: string;
   matched_vehicle_id?: string;
+  transaction_type: string;
 }
 
 serve(async (req) => {
@@ -53,7 +54,8 @@ serve(async (req) => {
         odometer: t.odometer,
         merchant_name: t.merchant_name,
         status: t.status,
-        flag_reason: t.flag_reason
+        flag_reason: t.flag_reason,
+        transaction_type: t.transaction_type
       })));
 
     if (insertError) {
@@ -63,11 +65,11 @@ serve(async (req) => {
 
     console.log('Successfully inserted transactions');
 
-    // Update vehicle odometers
+    // Update vehicle odometers - ONLY for Fleet Vehicle transactions
     const odometerUpdates: Array<{ vehicleId: string; odometer: number }> = [];
     
     for (const transaction of transactions) {
-      if (transaction.matched_vehicle_id && transaction.odometer > 0) {
+      if (transaction.transaction_type === 'Fleet Vehicle' && transaction.matched_vehicle_id && transaction.odometer > 0) {
         // Check if this odometer reading is higher than current
         const { data: currentVehicle, error: vehicleError } = await supabase
           .from('vehicles')

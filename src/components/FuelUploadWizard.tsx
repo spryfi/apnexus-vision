@@ -25,6 +25,7 @@ interface ProcessedTransaction {
   matchedVehicleId?: string;
   matchedVehicleName?: string;
   matchType: 'Direct ID Match' | 'Odometer Match' | 'Unmatched';
+  transactionType: 'Fleet Vehicle' | 'Auxiliary Fuel' | 'Rental Equipment';
 }
 
 interface FuelUploadWizardProps {
@@ -43,6 +44,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
   const [importing, setImporting] = useState(false);
   const [vehicles, setVehicles] = useState<Array<{id: string; asset_id: string; make: string; model: string; year: number}>>([]);
   const [transactionOverrides, setTransactionOverrides] = useState<Record<string, string>>({});
+  const [transactionTypeOverrides, setTransactionTypeOverrides] = useState<Record<string, 'Auxiliary Fuel' | 'Rental Equipment'>>({});
   const { toast } = useToast();
 
   // Fetch vehicles for dropdown selection
@@ -129,8 +131,10 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
         .filter(t => t.status === 'new' || t.status === 'flagged')
         .map(t => {
           const overrideVehicleId = transactionOverrides[t.sourceTransactionId];
+          const overrideTransactionType = transactionTypeOverrides[t.sourceTransactionId];
           let finalVehicleId = t.vehicleId;
           let finalMatchedVehicleId = t.matchedVehicleId;
+          let finalTransactionType = t.transactionType;
 
           if (overrideVehicleId) {
             const overrideVehicle = vehicles.find(v => v.id === overrideVehicleId);
@@ -138,10 +142,14 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
             finalMatchedVehicleId = overrideVehicleId;
           }
 
+          if (overrideTransactionType) {
+            finalTransactionType = overrideTransactionType;
+          }
+
           return {
             source_transaction_id: t.sourceTransactionId,
             transaction_date: t.transactionDate,
-            vehicle_id: finalVehicleId,
+            vehicle_id: finalTransactionType === 'Fleet Vehicle' ? finalVehicleId : null,
             employee_name: t.employeeName,
             gallons: t.gallons,
             cost_per_gallon: t.costPerGallon,
@@ -150,7 +158,8 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
             merchant_name: t.merchantName,
             status: t.status === 'flagged' ? 'Flagged for Review' : 'Verified',
             flag_reason: t.flagReason,
-            matched_vehicle_id: finalMatchedVehicleId
+            matched_vehicle_id: finalTransactionType === 'Fleet Vehicle' ? finalMatchedVehicleId : null,
+            transaction_type: finalTransactionType
           };
         });
 
@@ -192,6 +201,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     setFile(null);
     setProcessedData(null);
     setTransactionOverrides({});
+    setTransactionTypeOverrides({});
     onClose();
   };
 
@@ -203,6 +213,13 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     setTransactionOverrides(prev => ({
       ...prev,
       [transactionId]: vehicleId
+    }));
+  };
+
+  const handleTransactionTypeOverride = (transactionId: string, transactionType: 'Auxiliary Fuel' | 'Rental Equipment') => {
+    setTransactionTypeOverrides(prev => ({
+      ...prev,
+      [transactionId]: transactionType
     }));
   };
 
@@ -344,6 +361,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
                     <TableRow>
                       <TableHead>Status</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead>Transaction Type</TableHead>
                       <TableHead>Matched Vehicle</TableHead>
                       <TableHead>Employee</TableHead>
                       <TableHead>Gallons</TableHead>
@@ -354,9 +372,11 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
                   <TableBody>
                     {processedData.transactions.map((transaction, index) => {
                       const overrideVehicleId = transactionOverrides[transaction.sourceTransactionId];
+                      const overrideTransactionType = transactionTypeOverrides[transaction.sourceTransactionId];
                       const displayVehicle = overrideVehicleId 
                         ? vehicles.find(v => v.id === overrideVehicleId)
                         : null;
+                      const finalTransactionType = overrideTransactionType || transaction.transactionType;
                       
                       return (
                         <TableRow 
@@ -375,12 +395,48 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
                           </TableCell>
                           <TableCell>{formatDate(transaction.transactionDate)}</TableCell>
                           <TableCell>
+                            {transaction.transactionType === 'Fleet Vehicle' && (
+                              <Badge className="bg-blue-100 text-blue-800">Fleet Vehicle</Badge>
+                            )}
+                            {transaction.transactionType === 'Auxiliary Fuel' && !overrideTransactionType && (
+                              <Select onValueChange={(value: 'Auxiliary Fuel' | 'Rental Equipment') => handleTransactionTypeOverride(transaction.sourceTransactionId, value)} defaultValue="Auxiliary Fuel">
+                                <SelectTrigger className="w-[140px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Auxiliary Fuel">Auxiliary Fuel</SelectItem>
+                                  <SelectItem value="Rental Equipment">Rental Equipment</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {overrideTransactionType && (
+                              <div className="flex items-center gap-1">
+                                <Badge className="bg-orange-100 text-orange-800">{overrideTransactionType}</Badge>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => handleTransactionTypeOverride(transaction.sourceTransactionId, 'Auxiliary Fuel')}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Click to change transaction type</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
                             <div className="flex items-center gap-2">
-                              {transaction.matchType === 'Direct ID Match' && !overrideVehicleId && (
+                              {transaction.transactionType === 'Fleet Vehicle' && !overrideVehicleId && transaction.matchType === 'Direct ID Match' && (
                                 <span>{transaction.matchedVehicleName || transaction.vehicleId}</span>
                               )}
                               
-                              {transaction.matchType === 'Odometer Match' && !overrideVehicleId && (
+                              {transaction.transactionType === 'Fleet Vehicle' && !overrideVehicleId && transaction.matchType === 'Odometer Match' && (
                                 <div className="flex items-center gap-1">
                                   <span>{transaction.matchedVehicleName}</span>
                                   <Tooltip>
@@ -394,7 +450,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
                                 </div>
                               )}
                               
-                              {transaction.matchType === 'Unmatched' && !overrideVehicleId && (
+                              {transaction.transactionType === 'Fleet Vehicle' && transaction.matchType === 'Unmatched' && !overrideVehicleId && (
                                 <Select onValueChange={(value) => handleVehicleOverride(transaction.sourceTransactionId, value)}>
                                   <SelectTrigger className="w-[200px]">
                                     <SelectValue placeholder="Select vehicle..." />
@@ -407,6 +463,20 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
                                     ))}
                                   </SelectContent>
                                 </Select>
+                              )}
+                              
+                              {transaction.transactionType !== 'Fleet Vehicle' && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-muted-foreground">N/A</span>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <AlertTriangle className="h-3 w-3 text-orange-500" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Non-vehicle transaction - no vehicle assignment needed</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
                               )}
                               
                               {overrideVehicleId && displayVehicle && (
@@ -430,7 +500,7 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
                                 </div>
                               )}
                               
-                              {(transaction.matchType === 'Direct ID Match' || transaction.matchType === 'Odometer Match') && !overrideVehicleId && (
+                              {transaction.transactionType === 'Fleet Vehicle' && (transaction.matchType === 'Direct ID Match' || transaction.matchType === 'Odometer Match') && !overrideVehicleId && (
                                 <Tooltip>
                                   <TooltipTrigger>
                                     <Button 

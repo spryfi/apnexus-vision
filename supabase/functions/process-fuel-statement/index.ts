@@ -70,6 +70,7 @@ interface ProcessedTransaction {
   matchedVehicleId?: string;
   matchedVehicleName?: string;
   matchType: 'Direct ID Match' | 'Odometer Match' | 'Unmatched';
+  transactionType: 'Fleet Vehicle' | 'Auxiliary Fuel' | 'Rental Equipment';
 }
 
 serve(async (req) => {
@@ -216,7 +217,40 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
     merchantName
   });
 
-  // Intelligent Vehicle Matching
+  // CRITICAL: Check for 999999 Rule First (Non-Vehicle Transaction)
+  if (odometer === 999999) {
+    console.log('999999 odometer detected - processing as auxiliary fuel transaction');
+    
+    // Check for duplicate
+    const { data: existing, error: duplicateError } = await supabase
+      .from('fuel_transactions_new')
+      .select('id')
+      .eq('source_transaction_id', sourceTransactionId)
+      .maybeSingle();
+      
+    if (duplicateError) {
+      console.error('Error checking for duplicates:', duplicateError);
+    }
+
+    return {
+      sourceTransactionId,
+      transactionDate,
+      vehicleId: '', // No vehicle associated
+      employeeName,
+      gallons,
+      costPerGallon,
+      totalCost,
+      odometer,
+      merchantName,
+      status: existing ? 'duplicate' : 'new',
+      matchedVehicleId: undefined,
+      matchedVehicleName: undefined,
+      matchType: 'Unmatched', // Not applicable for auxiliary fuel
+      transactionType: 'Auxiliary Fuel'
+    };
+  }
+
+  // Normal Fleet Vehicle Processing
   const matchResult = await performVehicleMatching(rawVehicleId, odometer, supabase);
   console.log('Vehicle matching result:', matchResult);
 
@@ -245,7 +279,8 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
       status: 'duplicate',
       matchedVehicleId: matchResult.matchedVehicleId,
       matchedVehicleName: matchResult.matchedVehicleName,
-      matchType: matchResult.matchType
+      matchType: matchResult.matchType,
+      transactionType: 'Fleet Vehicle'
     };
   }
 
@@ -282,7 +317,8 @@ async function processTransaction(row: CSVRow, supabase: any): Promise<Processed
     flagReason: flagCheck.reason,
     matchedVehicleId: matchResult.matchedVehicleId,
     matchedVehicleName: matchResult.matchedVehicleName,
-    matchType: matchResult.matchType
+    matchType: matchResult.matchType,
+    transactionType: 'Fleet Vehicle'
   };
 }
 
