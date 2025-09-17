@@ -822,6 +822,100 @@ export default function NewExpense() {
                 )}
               </div>
 
+              {/* Recurring Expense Section */}
+              <div className="space-y-4 border-t pt-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="recurring"
+                    checked={isRecurring}
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                    className="rounded border-input"
+                  />
+                  <Label htmlFor="recurring" className="text-sm font-medium">
+                    Make this a recurring expense
+                  </Label>
+                </div>
+
+                {isRecurring && (
+                  <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+                    <h4 className="font-medium text-sm">Recurrence Schedule</h4>
+                    
+                    <div className="space-y-2">
+                      <Label>Frequency</Label>
+                      <Select 
+                        value={recurringData.frequency} 
+                        onValueChange={(value) => setRecurringData(prev => ({ ...prev, frequency: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Monthly">Monthly</SelectItem>
+                          <SelectItem value="Quarterly">Quarterly</SelectItem>
+                          <SelectItem value="Annually">Annually</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Generate reminder on day of month</Label>
+                      <Select 
+                        value={recurringData.day_of_month.toString()} 
+                        onValueChange={(value) => setRecurringData(prev => ({ ...prev, day_of_month: parseInt(value) }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                            <SelectItem key={day} value={day.toString()}>
+                              {day}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label>End Date</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="never"
+                            name="end_type"
+                            value="never"
+                            checked={recurringData.end_type === 'never'}
+                            onChange={(e) => setRecurringData(prev => ({ ...prev, end_type: e.target.value }))}
+                          />
+                          <Label htmlFor="never" className="text-sm">Never Ends</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="ends_on"
+                            name="end_type"
+                            value="ends_on"
+                            checked={recurringData.end_type === 'ends_on'}
+                            onChange={(e) => setRecurringData(prev => ({ ...prev, end_type: e.target.value }))}
+                          />
+                          <Label htmlFor="ends_on" className="text-sm">Ends on</Label>
+                        </div>
+                        {recurringData.end_type === 'ends_on' && (
+                          <Input
+                            type="date"
+                            value={recurringData.end_date}
+                            onChange={(e) => setRecurringData(prev => ({ ...prev, end_date: e.target.value }))}
+                            className="ml-6"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="memo">Transaction Memo</Label>
                 <Textarea
