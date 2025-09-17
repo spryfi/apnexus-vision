@@ -268,10 +268,65 @@ export default function NewExpense() {
   };
 
   const handleSaveTransaction = async () => {
+    // Validation checks
     if (!documentUrl) {
       toast({
         title: "Error",
         description: "Please upload a receipt first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.vendor_id) {
+      toast({
+        title: "Error",
+        description: "Please select a vendor.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.employee_id) {
+      toast({
+        title: "Error",
+        description: "Please select an employee.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.expense_category_id) {
+      toast({
+        title: "Error",
+        description: "Please select an expense category.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.invoice_date) {
+      toast({
+        title: "Error",
+        description: "Please enter the transaction date.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid total amount.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.payment_method) {
+      toast({
+        title: "Error",
+        description: "Please select a payment method.",
         variant: "destructive"
       });
       return;
@@ -287,6 +342,13 @@ export default function NewExpense() {
     }
 
     try {
+      // Show saving state
+      const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement;
+      if (saveButton) {
+        saveButton.textContent = 'Saving...';
+        saveButton.disabled = true;
+      }
+
       // Create transaction
       const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
@@ -306,46 +368,53 @@ export default function NewExpense() {
 
       if (transactionError) throw transactionError;
 
-      // Create line items
-      const lineItemsToInsert = lineItems.map(item => ({
-        transaction_id: transaction.id,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price
-      }));
+      // Create line items only if they have descriptions
+      const validLineItems = lineItems.filter(item => item.description.trim() !== '');
+      if (validLineItems.length > 0) {
+        const lineItemsToInsert = validLineItems.map(item => ({
+          transaction_id: transaction.id,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price
+        }));
 
-      const { error: lineItemsError } = await supabase
-        .from('transaction_line_items')
-        .insert(lineItemsToInsert);
+        const { error: lineItemsError } = await supabase
+          .from('transaction_line_items')
+          .insert(lineItemsToInsert);
 
-      if (lineItemsError) throw lineItemsError;
+        if (lineItemsError) throw lineItemsError;
+      }
+
+      // Show success state
+      if (saveButton) {
+        saveButton.textContent = 'Saved! ✅';
+        saveButton.className = saveButton.className.replace(/bg-\S+/g, '') + ' bg-green-600';
+      }
 
       toast({
         title: "Success",
         description: "Transaction saved successfully!"
       });
 
-      // Reset form
-      setCurrentStep('upload');
-      setExtractionComplete(false);
-      setFormData({
-        vendor_id: '',
-        employee_id: '',
-        expense_category_id: '',
-        invoice_date: '',
-        amount: '',
-        payment_method: '',
-        transaction_memo: ''
-      });
-      setLineItems([{ id: '1', description: '', quantity: 1, unit_price: 0, total_price: 0 }]);
-      setUploadedFile(null);
-      setDocumentUrl('');
+      // Navigate away after 1.5 seconds
+      setTimeout(() => {
+        window.location.href = '/transactions';
+      }, 1500);
+
     } catch (error) {
       console.error('Error saving transaction:', error);
+      
+      // Reset button state on error
+      const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement;
+      if (saveButton) {
+        saveButton.textContent = 'Submit for Approval';
+        saveButton.disabled = false;
+      }
+
       toast({
         title: "Error",
-        description: "Failed to save transaction.",
+        description: "Failed to save transaction. Please try again.",
         variant: "destructive"
       });
     }
@@ -359,8 +428,9 @@ export default function NewExpense() {
       formData.expense_category_id &&
       formData.invoice_date &&
       formData.amount &&
+      parseFloat(formData.amount) > 0 &&
       formData.payment_method &&
-      totalsMatch === true
+      (totalsMatch === true || totalsMatch === null)
     );
   };
 
@@ -569,10 +639,17 @@ export default function NewExpense() {
               <div className="space-y-2">
                 <Label htmlFor="amount">Total Amount</Label>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
                   value={formData.amount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow only numbers and a single decimal point
+                    if (/^[0-9]*\.?[0-9]*$/.test(value)) {
+                      setFormData(prev => ({ ...prev, amount: value }));
+                    }
+                  }}
                 />
               </div>
 
@@ -720,10 +797,11 @@ export default function NewExpense() {
 
               <Button
                 onClick={handleSaveTransaction}
-                disabled={!documentUrl || totalsMatch === false}
+                disabled={!canSubmit()}
                 className="w-full"
+                data-save-button
               >
-                Save Transaction
+                Submit for Approval
               </Button>
             </CardContent>
           </Card>
