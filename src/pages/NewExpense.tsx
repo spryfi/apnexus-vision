@@ -59,6 +59,15 @@ export default function NewExpense() {
     transaction_memo: ''
   });
 
+  // Recurring expense state
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringData, setRecurringData] = useState({
+    frequency: 'Monthly',
+    day_of_month: 1,
+    end_type: 'never',
+    end_date: ''
+  });
+
   const [lineItems, setLineItems] = useState<LineItem[]>([
     { id: '1', description: '', quantity: 1, unit_price: 0, total_price: 0 }
   ]);
@@ -384,6 +393,33 @@ export default function NewExpense() {
           .insert(lineItemsToInsert);
 
         if (lineItemsError) throw lineItemsError;
+      }
+
+      // Create recurring expense rule if enabled
+      if (isRecurring) {
+        const nextDate = new Date();
+        nextDate.setDate(recurringData.day_of_month);
+        
+        // If the day has already passed this month, set for next month
+        if (nextDate.getDate() < new Date().getDate() || 
+            (nextDate.getDate() === new Date().getDate() && nextDate.getTime() < new Date().getTime())) {
+          nextDate.setMonth(nextDate.getMonth() + 1);
+        }
+
+        const recurringExpense = {
+          template_transaction_id: transaction.id,
+          frequency: recurringData.frequency,
+          day_of_month_to_generate: recurringData.day_of_month,
+          next_generation_date: nextDate.toISOString().split('T')[0],
+          end_date: recurringData.end_type === 'ends_on' ? recurringData.end_date : null,
+          is_active: true
+        };
+
+        const { error: recurringError } = await supabase
+          .from('recurring_expenses')
+          .insert(recurringExpense);
+
+        if (recurringError) throw recurringError;
       }
 
       // Show success state

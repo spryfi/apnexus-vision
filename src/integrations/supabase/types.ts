@@ -2584,6 +2584,45 @@ export type Database = {
           },
         ]
       }
+      recurring_expenses: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          day_of_month_to_generate: number
+          end_date: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          next_generation_date: string
+          template_transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          day_of_month_to_generate: number
+          end_date?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean
+          next_generation_date: string
+          template_transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          day_of_month_to_generate?: number
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          next_generation_date?: string
+          template_transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           bonus_applied: boolean | null
