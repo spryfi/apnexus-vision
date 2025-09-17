@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Sparkles, AlertTriangle, CheckCircle, Plus, Trash2 } from 'lucide-react';
+import { Upload, Sparkles, AlertTriangle, CheckCircle, Plus, Trash2, FileText, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Tables } from '@/integrations/supabase/types';
+
+type WorkflowStep = 'upload' | 'extraction' | 'verification';
 
 type Vendor = Tables<'vendors'>;
 type Employee = Tables<'employees'>;
@@ -37,9 +39,11 @@ interface ExtractedData {
 
 export default function NewExpense() {
   const { toast } = useToast();
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>('upload');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState<string>('');
   const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionComplete, setExtractionComplete] = useState(false);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -117,6 +121,44 @@ export default function NewExpense() {
 
       setUploadedFile(file);
       setDocumentUrl(publicUrl.publicUrl);
+      setCurrentStep('extraction');
+      
+      toast({
+        title: "Success",
+        description: "Document uploaded successfully!"
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload document.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDrop = async (event: React.DragEvent) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('invoice-receipts')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: publicUrl } = supabase.storage
+        .from('invoice-receipts')
+        .getPublicUrl(data.path);
+
+      setUploadedFile(file);
+      setDocumentUrl(publicUrl.publicUrl);
+      setCurrentStep('extraction');
       
       toast({
         title: "Success",
@@ -173,6 +215,9 @@ export default function NewExpense() {
         setLineItems(newLineItems);
       }
 
+      setExtractionComplete(true);
+      setCurrentStep('verification');
+      
       toast({
         title: "Success",
         description: "Document details extracted successfully!"
@@ -282,6 +327,8 @@ export default function NewExpense() {
       });
 
       // Reset form
+      setCurrentStep('upload');
+      setExtractionComplete(false);
       setFormData({
         vendor_id: '',
         employee_id: '',
@@ -303,6 +350,136 @@ export default function NewExpense() {
       });
     }
   };
+
+  const canSubmit = () => {
+    return (
+      documentUrl &&
+      formData.vendor_id &&
+      formData.employee_id &&
+      formData.expense_category_id &&
+      formData.invoice_date &&
+      formData.amount &&
+      formData.payment_method &&
+      totalsMatch === true
+    );
+  };
+
+  const renderUploadStep = () => (
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 flex items-center justify-center p-6">
+      <Card className="w-full max-w-2xl mx-auto shadow-xl">
+        <CardContent className="p-12">
+          <div className="text-center space-y-8">
+            <div className="mx-auto w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+              <Upload className="h-12 w-12 text-primary" />
+            </div>
+            
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold text-foreground">Start by uploading your invoice or receipt</h1>
+              <p className="text-lg text-muted-foreground max-w-md mx-auto">
+                Drag and drop a PDF or image file here, or click to browse. Our AI will extract all the details automatically.
+              </p>
+            </div>
+
+            <div 
+              className="border-2 border-dashed border-primary/30 rounded-xl p-12 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 cursor-pointer group"
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onClick={() => document.getElementById('file-upload')?.click()}
+            >
+              <div className="space-y-6">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileText className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <p className="text-lg font-medium text-foreground mb-2">Drop your document here</p>
+                  <p className="text-muted-foreground">or click to browse files</p>
+                  <p className="text-sm text-muted-foreground mt-2">Supports PDF, JPG, PNG up to 10MB</p>
+                </div>
+              </div>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderExtractionStep = () => (
+    <div className="flex h-screen bg-background">
+      {/* Left Panel - Document Viewer */}
+      <div className="flex-1 p-6">
+        <Card className="h-full shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-success" />
+              </div>
+              Document Uploaded
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-full pb-6">
+            <div className="h-full bg-muted/30 rounded-lg overflow-hidden">
+              {documentUrl && (
+                <iframe
+                  src={documentUrl}
+                  className="w-full h-full border-0"
+                  title="Uploaded Document"
+                />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Right Panel - AI Extraction */}
+      <div className="w-96 p-6 bg-muted/20">
+        <Card className="h-full shadow-lg">
+          <CardHeader>
+            <CardTitle>Extract Invoice Details</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center h-full text-center space-y-8">
+            <div className="space-y-6">
+              <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center">
+                <Sparkles className="h-10 w-10 text-white" />
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold">Ready for AI Magic!</h3>
+                <p className="text-muted-foreground">
+                  Our AI will automatically extract vendor details, amounts, dates, and line items from your document.
+                </p>
+              </div>
+
+              <Button
+                onClick={handleAIExtraction}
+                disabled={isExtracting}
+                size="lg"
+                className="w-full relative overflow-hidden group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              >
+                <div className={`flex items-center gap-3 ${isExtracting ? 'animate-pulse' : ''}`}>
+                  <Sparkles className="h-5 w-5" />
+                  {isExtracting ? 'Extracting Details...' : '✨ Auto-Extract Details with AI'}
+                </div>
+                {!isExtracting && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 group-hover:animate-pulse"></div>
+                )}
+              </Button>
+
+              <p className="text-xs text-muted-foreground">
+                This usually takes 5-10 seconds
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 
   return (
     <Layout>
