@@ -965,6 +965,54 @@ export type Database = {
         }
         Relationships: []
       }
+      employees_enhanced: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          hire_date: string | null
+          id: string
+          job_title: string | null
+          pay_rate: number
+          pay_type: string | null
+          phone: string | null
+          pto_sick_hours_accrued_annually: number | null
+          pto_vacation_hours_accrued_annually: number | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          hire_date?: string | null
+          id?: string
+          job_title?: string | null
+          pay_rate: number
+          pay_type?: string | null
+          phone?: string | null
+          pto_sick_hours_accrued_annually?: number | null
+          pto_vacation_hours_accrued_annually?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          hire_date?: string | null
+          id?: string
+          job_title?: string | null
+          pay_rate?: number
+          pay_type?: string | null
+          phone?: string | null
+          pto_sick_hours_accrued_annually?: number | null
+          pto_vacation_hours_accrued_annually?: number | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expense_categories: {
         Row: {
           category_name: string
@@ -3255,6 +3303,47 @@ export type Database = {
         }
         Relationships: []
       }
+      stipends: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          employee_id: string
+          frequency: string
+          id: string
+          is_active: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          employee_id: string
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          employee_id?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stipends_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_enhanced"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_completions: {
         Row: {
           completed_at: string | null
@@ -3415,6 +3504,50 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_off_records: {
+        Row: {
+          created_at: string
+          employee_id: string
+          end_date: string
+          hours_used: number
+          id: string
+          leave_type: string
+          notes: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          end_date: string
+          hours_used: number
+          id?: string
+          leave_type: string
+          notes?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          hours_used?: number
+          id?: string
+          leave_type?: string
+          notes?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_off_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_enhanced"
             referencedColumns: ["id"]
           },
         ]
@@ -4233,6 +4366,10 @@ export type Database = {
       bytea_to_text: {
         Args: { data: string }
         Returns: string
+      }
+      calculate_pto_balance: {
+        Args: { p_employee_id: string; p_leave_type: string }
+        Returns: number
       }
       calculate_social_credit_amount: {
         Args: { p_customer_id?: string; p_lead_id?: string; p_platform: string }

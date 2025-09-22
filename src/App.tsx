@@ -14,7 +14,8 @@ import Transactions from "@/pages/Transactions";
 import Vendors from "@/pages/Vendors";
 import VendorDetail from "@/pages/VendorDetail";
 import Fuel from "@/pages/Fuel";
-import Staff from "@/pages/Staff";
+import StaffEnhanced from "@/pages/StaffEnhanced";
+import EmployeeDetail from "@/pages/EmployeeDetail";
 import Payroll from "@/pages/Payroll";
 import Settings from "@/pages/Settings";
 import Fleet from "@/pages/Fleet";
@@ -50,7 +51,8 @@ const App = () => (
             <Route path="/vendors" element={<Layout><Vendors /></Layout>} />
             <Route path="/vendors/:id" element={<Layout><VendorDetail /></Layout>} />
             <Route path="/fuel" element={<Layout><Fuel /></Layout>} />
-            <Route path="/staff" element={<Layout><Staff /></Layout>} />
+            <Route path="/staff" element={<Layout><StaffEnhanced /></Layout>} />
+            <Route path="/staff/:id" element={<Layout><EmployeeDetail /></Layout>} />
             <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
             <Route path="/fleet" element={<Layout><Fleet /></Layout>} />
             <Route path="/fleet/:id" element={<Layout><VehicleDetail /></Layout>} />
