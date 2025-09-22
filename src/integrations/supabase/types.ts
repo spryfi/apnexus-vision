@@ -2097,6 +2097,39 @@ export type Database = {
           },
         ]
       }
+      payment_alerts: {
+        Row: {
+          alert_type: string
+          count: number
+          created_at: string
+          id: string
+          invoice_ids: string[] | null
+          is_active: boolean | null
+          message: string
+          updated_at: string
+        }
+        Insert: {
+          alert_type: string
+          count?: number
+          created_at?: string
+          id?: string
+          invoice_ids?: string[] | null
+          is_active?: boolean | null
+          message: string
+          updated_at?: string
+        }
+        Update: {
+          alert_type?: string
+          count?: number
+          created_at?: string
+          id?: string
+          invoice_ids?: string[] | null
+          is_active?: boolean | null
+          message?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           account_details: string | null
