@@ -1784,6 +1784,47 @@ export type Database = {
           },
         ]
       }
+      odometer_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          created_at: string
+          id: string
+          new_reading: number
+          notes: string | null
+          previous_reading: number | null
+          vehicle_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_reading: number
+          notes?: string | null
+          previous_reading?: number | null
+          vehicle_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_reading?: number
+          notes?: string | null
+          previous_reading?: number | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "odometer_log_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_events: {
         Row: {
           customer_id: string | null

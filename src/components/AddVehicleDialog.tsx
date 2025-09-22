@@ -8,82 +8,70 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
+interface Vehicle {
+  id: string;
+  current_odometer: number;
+  vehicle_name: string;
+  asset_id: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  vin?: string;
+  license_plate?: string;
+  registration_expiry_date?: string;
+  insurance_policy_number?: string;
+  insurance_expiry_date?: string;
+  status: string;
+}
+
 interface AddVehicleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onVehicleAdded: () => void;
+  vehicle?: Vehicle | null; // For editing existing vehicle
 }
 
 const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
   open,
   onOpenChange,
-  onVehicleAdded
+  onVehicleAdded,
+  vehicle
 }) => {
   const [loading, setLoading] = useState(false);
+  const [odometerError, setOdometerError] = useState<string>('');
   const [formData, setFormData] = useState({
-    vehicle_name: '',
-    asset_id: '',
-    make: '',
-    model: '',
-    year: '',
-    vin: '',
-    license_plate: '',
-    current_odometer: '',
-    registration_expiry_date: '',
-    insurance_policy_number: '',
-    insurance_expiry_date: '',
-    status: 'Active'
+    vehicle_name: vehicle?.vehicle_name || '',
+    asset_id: vehicle?.asset_id || '',
+    make: vehicle?.make || '',
+    model: vehicle?.model || '',
+    year: vehicle?.year?.toString() || '',
+    vin: vehicle?.vin || '',
+    license_plate: vehicle?.license_plate || '',
+    current_odometer: vehicle?.current_odometer?.toString() || '',
+    registration_expiry_date: vehicle?.registration_expiry_date || '',
+    insurance_policy_number: vehicle?.insurance_policy_number || '',
+    insurance_expiry_date: vehicle?.insurance_expiry_date || '',
+    status: vehicle?.status || 'Active'
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.vehicle_name || !formData.asset_id) {
-      toast({
-        title: "Validation Error",
-        description: "Vehicle name and Asset ID are required",
-        variant: "destructive",
+  // Update form data when vehicle prop changes
+  React.useEffect(() => {
+    if (vehicle) {
+      setFormData({
+        vehicle_name: vehicle.vehicle_name || '',
+        asset_id: vehicle.asset_id || '',
+        make: vehicle.make || '',
+        model: vehicle.model || '',
+        year: vehicle.year?.toString() || '',
+        vin: vehicle.vin || '',
+        license_plate: vehicle.license_plate || '',
+        current_odometer: vehicle.current_odometer?.toString() || '',
+        registration_expiry_date: vehicle.registration_expiry_date || '',
+        insurance_policy_number: vehicle.insurance_policy_number || '',
+        insurance_expiry_date: vehicle.insurance_expiry_date || '',
+        status: vehicle.status || 'Active'
       });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const vehicleData = {
-        vehicle_name: formData.vehicle_name,
-        asset_id: formData.asset_id,
-        make: formData.make || null,
-        model: formData.model || null,
-        year: formData.year ? parseInt(formData.year) : null,
-        vin: formData.vin || null,
-        license_plate: formData.license_plate || null,
-        current_odometer: formData.current_odometer ? parseInt(formData.current_odometer) : 0,
-        registration_expiry_date: formData.registration_expiry_date || null,
-        insurance_policy_number: formData.insurance_policy_number || null,
-        insurance_expiry_date: formData.insurance_expiry_date || null,
-        status: formData.status
-      };
-
-      const { error } = await supabase
-        .from('vehicles')
-        .insert([vehicleData]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Vehicle added successfully",
-      });
-
-      // Reset form
+    } else {
       setFormData({
         vehicle_name: '',
         asset_id: '',
@@ -98,14 +86,95 @@ const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
         insurance_expiry_date: '',
         status: 'Active'
       });
+    }
+    setOdometerError('');
+  }, [vehicle, open]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
+    // Clear odometer error when user changes the value
+    if (field === 'current_odometer') {
+      setOdometerError('');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.vehicle_name || !formData.asset_id || !formData.current_odometer) {
+      toast({
+        title: "Validation Error",
+        description: "Vehicle name, Asset ID, and Current Odometer Reading are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newOdometerValue = parseInt(formData.current_odometer);
+    
+    // Validation for editing: new odometer cannot be lower than current
+    if (vehicle && newOdometerValue < vehicle.current_odometer) {
+      setOdometerError(`⚠️ Error: The new odometer reading cannot be lower than the current recorded value of ${vehicle.current_odometer.toLocaleString()}.`);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const vehicleData = {
+        vehicle_name: formData.vehicle_name,
+        asset_id: formData.asset_id,
+        make: formData.make || null,
+        model: formData.model || null,
+        year: formData.year ? parseInt(formData.year) : null,
+        vin: formData.vin || null,
+        license_plate: formData.license_plate || null,
+        current_odometer: newOdometerValue,
+        registration_expiry_date: formData.registration_expiry_date || null,
+        insurance_policy_number: formData.insurance_policy_number || null,
+        insurance_expiry_date: formData.insurance_expiry_date || null,
+        status: formData.status
+      };
+
+      if (vehicle) {
+        // Updating existing vehicle
+        const { error } = await supabase
+          .from('vehicles')
+          .update(vehicleData)
+          .eq('id', vehicle.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Vehicle updated successfully",
+        });
+      } else {
+        // Adding new vehicle
+        const { error } = await supabase
+          .from('vehicles')
+          .insert([vehicleData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Vehicle added successfully",
+        });
+      }
 
       onOpenChange(false);
       onVehicleAdded();
     } catch (error) {
-      console.error('Error adding vehicle:', error);
+      console.error('Error saving vehicle:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add vehicle",
+        description: error instanceof Error ? error.message : `Failed to ${vehicle ? 'update' : 'add'} vehicle`,
         variant: "destructive",
       });
     } finally {
@@ -120,9 +189,9 @@ const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Vehicle</DialogTitle>
+          <DialogTitle>{vehicle ? 'Edit Vehicle' : 'Add New Vehicle'}</DialogTitle>
           <DialogDescription>
-            Add a new vehicle to your fleet. Vehicle name and Asset ID are required.
+            {vehicle ? 'Update vehicle information. All fields marked with * are required.' : 'Add a new vehicle to your fleet. All fields marked with * are required.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -209,14 +278,22 @@ const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="current_odometer">Current Odometer</Label>
+              <Label htmlFor="current_odometer">Current Odometer Reading *</Label>
               <Input
                 id="current_odometer"
                 type="number"
                 value={formData.current_odometer}
                 onChange={(e) => handleInputChange('current_odometer', e.target.value)}
                 placeholder="Current mileage"
+                required
+                className={odometerError ? "border-destructive" : ""}
               />
+              {odometerError && (
+                <p className="text-sm text-destructive mt-1">{odometerError}</p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Enter the current mileage from the vehicle's dashboard. This is the baseline for all tracking.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -272,9 +349,9 @@ const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !!odometerError}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Add Vehicle
+              {vehicle ? 'Update Vehicle' : 'Add Vehicle'}
             </Button>
           </DialogFooter>
         </form>

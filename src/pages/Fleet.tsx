@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Truck, AlertTriangle, Calendar, Shield, Eye } from "lucide-react";
+import { Plus, Truck, AlertTriangle, Calendar, Shield, Eye, Edit } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import AddVehicleDialog from "@/components/AddVehicleDialog";
@@ -30,6 +30,7 @@ const Fleet: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,6 +88,17 @@ const Fleet: React.FC = () => {
 
   const handleVehicleClick = (vehicleId: string) => {
     navigate(`/fleet/${vehicleId}`);
+  };
+
+  const handleEditVehicle = (e: React.MouseEvent, vehicle: Vehicle) => {
+    e.stopPropagation(); // Prevent row click navigation
+    setEditingVehicle(vehicle);
+    setShowAddDialog(true);
+  };
+
+  const handleDialogClose = () => {
+    setShowAddDialog(false);
+    setEditingVehicle(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -256,15 +268,26 @@ const Fleet: React.FC = () => {
                           'Not set'
                         )}
                       </TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleVehicleClick(vehicle.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex items-center gap-2">
+                           <Button 
+                             variant="ghost" 
+                             size="sm"
+                             onClick={(e) => handleEditVehicle(e, vehicle)}
+                             title="Edit Vehicle"
+                           >
+                             <Edit className="h-4 w-4" />
+                           </Button>
+                           <Button 
+                             variant="ghost" 
+                             size="sm"
+                             onClick={() => handleVehicleClick(vehicle.id)}
+                             title="View Details"
+                           >
+                             <Eye className="h-4 w-4" />
+                           </Button>
+                         </div>
+                       </TableCell>
                     </TableRow>
                   );
                 })}
@@ -274,11 +297,12 @@ const Fleet: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Add Vehicle Dialog */}
+      {/* Add/Edit Vehicle Dialog */}
       <AddVehicleDialog 
         open={showAddDialog}
-        onOpenChange={setShowAddDialog}
+        onOpenChange={handleDialogClose}
         onVehicleAdded={fetchVehicles}
+        vehicle={editingVehicle}
       />
     </div>
   );
