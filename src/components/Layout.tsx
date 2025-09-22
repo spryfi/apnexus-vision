@@ -13,8 +13,8 @@ import { Loader2 } from "lucide-react";
 import TaskStatusCards from "@/components/TaskStatusCards";
 
 const navigation = [
+  { name: "➕ Enter an Invoice", href: "/invoice-entry", icon: Receipt, primary: true },
   { name: "AP-Fortress", href: "/", icon: Shield },
-  { name: "➕ New Expense", href: "/new-expense", icon: Receipt },
   { name: "Admin Hub", href: "/admin", icon: Settings },
   { name: "Legacy Transactions", href: "/transactions", icon: Receipt },
   { name: "Vendors & Categories", href: "/vendors", icon: Users },
@@ -58,9 +58,11 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
                 onClick={handleNavClick}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
+                    item.primary 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold border-2 border-primary-foreground/20" 
+                      : isActive
+                        ? "bg-muted text-foreground"
+                        : "hover:bg-muted"
                   }`
                 }
               >

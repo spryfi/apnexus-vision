@@ -16,6 +16,7 @@ import VendorDetail from "@/pages/VendorDetail";
 import Fuel from "@/pages/Fuel";
 import StaffEnhanced from "@/pages/StaffEnhanced";
 import EmployeeDetail from "@/pages/EmployeeDetail";
+import InvoiceEntry from "@/pages/InvoiceEntry";
 import Payroll from "@/pages/Payroll";
 import Settings from "@/pages/Settings";
 import Fleet from "@/pages/Fleet";
@@ -44,6 +45,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/invoice-entry" element={<Layout><InvoiceEntry /></Layout>} />
             <Route path="/" element={<Layout><APFortress /></Layout>} />
             <Route path="/admin" element={<Layout><AdminHub /></Layout>} />
             <Route path="/new-expense" element={<Layout><NewExpense /></Layout>} />
