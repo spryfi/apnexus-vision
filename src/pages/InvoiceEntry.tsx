@@ -232,10 +232,10 @@ const InvoiceEntry: React.FC = () => {
         invoice_number: formData.invoice_number || null,
         purchase_description: formData.description || null,
         employee_name: formData.employee_name || null,
-        payment_method: formData.payment_method || null,
+        payment_method: (formData.payment_method as "Credit Card" | "ACH" | "Check" | "Fleet Fuel Card" | "Debit Card") || "Credit Card",
         expense_category: formData.expense_category || null,
         invoice_receipt_url: fileUrl,
-        status: 'Pending Approval',
+        status: 'Pending Approval' as const,
         vendor_id: '00000000-0000-0000-0000-000000000000', // Temporary placeholder
         employee_id: '00000000-0000-0000-0000-000000000000', // Temporary placeholder  
         expense_category_id: '00000000-0000-0000-0000-000000000000' // Temporary placeholder
@@ -243,7 +243,7 @@ const InvoiceEntry: React.FC = () => {
 
       const { error } = await supabase
         .from('transactions')
-        .insert([transactionData]);
+        .insert(transactionData);
 
       if (error) throw error;
 
