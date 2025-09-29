@@ -358,7 +358,7 @@ export default function NewExpense() {
         saveButton.disabled = true;
       }
 
-      // Create transaction
+      // Create transaction with proper schema mapping
       const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
         .insert({
@@ -366,16 +366,20 @@ export default function NewExpense() {
           employee_id: formData.employee_id,
           expense_category_id: formData.expense_category_id,
           invoice_date: formData.invoice_date,
+          due_date: formData.invoice_date, // Set due_date same as invoice_date if not specified
           amount: parseFloat(formData.amount),
           payment_method: formData.payment_method as "Credit Card" | "ACH" | "Check" | "Fleet Fuel Card" | "Debit Card",
-          transaction_memo: formData.transaction_memo,
+          transaction_memo: formData.transaction_memo || null,
           invoice_receipt_url: documentUrl,
           status: 'Entry Required'
         })
         .select()
         .single();
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error('Transaction save error:', transactionError);
+        throw new Error(`Failed to save transaction: ${transactionError.message}`);
+      }
 
       // Create line items only if they have descriptions
       const validLineItems = lineItems.filter(item => item.description.trim() !== '');
@@ -448,9 +452,12 @@ export default function NewExpense() {
         saveButton.disabled = false;
       }
 
+      // Show specific error message from Supabase
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save transaction. Please try again.';
+      
       toast({
-        title: "Error",
-        description: "Failed to save transaction. Please try again.",
+        title: "Save Failed",
+        description: errorMessage,
         variant: "destructive"
       });
     }

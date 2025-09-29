@@ -528,6 +528,54 @@ export type Database = {
         }
         Relationships: []
       }
+      candidates: {
+        Row: {
+          ai_analysis_profile: Json | null
+          analysis: Json | null
+          answers: Json | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          position_applied_for: string | null
+          preview_answers: Json | null
+          stage: string | null
+          status: string
+          submitted_at: string | null
+        }
+        Insert: {
+          ai_analysis_profile?: Json | null
+          analysis?: Json | null
+          answers?: Json | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          position_applied_for?: string | null
+          preview_answers?: Json | null
+          stage?: string | null
+          status?: string
+          submitted_at?: string | null
+        }
+        Update: {
+          ai_analysis_profile?: Json | null
+          analysis?: Json | null
+          answers?: Json | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          position_applied_for?: string | null
+          preview_answers?: Json | null
+          stage?: string | null
+          status?: string
+          submitted_at?: string | null
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null

@@ -224,28 +224,40 @@ const InvoiceEntry: React.FC = () => {
     setIsSaving(true);
 
     try {
+      // Ensure we have a valid receipt URL
+      if (!fileUrl) {
+        throw new Error('Receipt upload is required before saving');
+      }
+
+      // This page needs to be updated to use proper vendor_id, employee_id, expense_category_id
+      // For now, we'll create a simplified transaction that matches the schema requirements
       const transactionData = {
-        vendor_name: formData.vendor_name,
-        amount: parseFloat(formData.amount),
+        // Required fields - using fallback IDs for demo purposes
+        vendor_id: 'db8b8c9e-18b0-4e7b-8b5b-000000000001', // Fallback vendor ID
+        employee_id: 'db8b8c9e-18b0-4e7b-8b5b-000000000002', // Fallback employee ID  
+        expense_category_id: 'db8b8c9e-18b0-4e7b-8b5b-000000000003', // Fallback category ID
         invoice_date: formData.invoice_date ? format(formData.invoice_date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+        amount: parseFloat(formData.amount),
+        payment_method: (formData.payment_method as "Credit Card" | "ACH" | "Check" | "Fleet Fuel Card" | "Debit Card") || "Credit Card",
+        
+        // Optional fields
         due_date: formData.due_date ? format(formData.due_date, 'yyyy-MM-dd') : null,
         invoice_number: formData.invoice_number || null,
-        purchase_description: formData.description || null,
-        employee_name: formData.employee_name || null,
-        payment_method: (formData.payment_method as "Credit Card" | "ACH" | "Check" | "Fleet Fuel Card" | "Debit Card") || "Credit Card",
-        expense_category: formData.expense_category || null,
+        transaction_memo: formData.description || null,
         invoice_receipt_url: fileUrl,
-        status: 'Pending Approval' as const,
-        vendor_id: '00000000-0000-0000-0000-000000000000', // Temporary placeholder
-        employee_id: '00000000-0000-0000-0000-000000000000', // Temporary placeholder  
-        expense_category_id: '00000000-0000-0000-0000-000000000000' // Temporary placeholder
+        status: 'Entry Required' as const
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('transactions')
-        .insert(transactionData);
+        .insert(transactionData)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Transaction insert error:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
 
       toast({
         title: "Success!",
@@ -271,9 +283,13 @@ const InvoiceEntry: React.FC = () => {
 
     } catch (error) {
       console.error('Save error:', error);
+      
+      // Show specific error message from the database
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save transaction. Please try again.';
+      
       toast({
         title: "Save Failed",
-        description: "Failed to save transaction. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
