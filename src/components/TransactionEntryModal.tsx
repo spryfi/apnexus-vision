@@ -46,7 +46,7 @@ export function TransactionEntryModal({
   const [vendors, setVendors] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [companyCards, setCompanyCards] = useState<any[]>([]);
   const { toast } = useToast();
 
   const form = useForm({
@@ -58,8 +58,7 @@ export function TransactionEntryModal({
       invoice_date: transaction.invoice_date || '',
       due_date: transaction.due_date || '',
       transaction_memo: transaction.transaction_memo || '',
-      payment_method: transaction.payment_method || '',
-      payment_source_detail: transaction.payment_source_detail || '',
+      payment_method: transaction.payment_source_detail || '',
       invoice_receipt_url: transaction.invoice_receipt_url || '',
       status: 'Pending Approval'
     }
@@ -75,8 +74,7 @@ export function TransactionEntryModal({
     invoice_date: transaction.invoice_date || '',
     due_date: transaction.due_date || '',
     transaction_memo: transaction.transaction_memo || '',
-    payment_method: transaction.payment_method || '',
-    payment_source_detail: transaction.payment_source_detail || '',
+    payment_method: transaction.payment_source_detail || '',
     invoice_receipt_url: transaction.invoice_receipt_url || '',
   });
 
@@ -88,17 +86,17 @@ export function TransactionEntryModal({
 
   const fetchDropdownData = async () => {
     try {
-      const [vendorsRes, employeesRes, categoriesRes, paymentMethodsRes] = await Promise.all([
+      const [vendorsRes, employeesRes, categoriesRes, companyCardsRes] = await Promise.all([
         supabase.from('vendors').select('*').order('vendor_name'),
         supabase.from('employees').select('*').order('employee_name'),
         supabase.from('expense_categories').select('*').order('category_name'),
-        supabase.from('payment_methods').select('*').eq('is_active', true).order('method_name')
+        supabase.from('company_cards').select('*').eq('is_active', true).order('cardholder_name')
       ]);
 
       setVendors(vendorsRes.data || []);
       setEmployees(employeesRes.data || []);
       setCategories(categoriesRes.data || []);
-      setPaymentMethods(paymentMethodsRes.data || []);
+      setCompanyCards(companyCardsRes.data || []);
     } catch (error) {
       toast({
         title: "Error loading data",
@@ -117,7 +115,7 @@ export function TransactionEntryModal({
       formData.invoice_date &&
       formData.transaction_memo && formData.transaction_memo.length >= 20 &&
       formData.payment_method &&
-      formData.payment_source_detail &&
+      formData.payment_method &&
       formData.invoice_receipt_url
     );
   };
@@ -145,7 +143,7 @@ export function TransactionEntryModal({
           invoice_date: formData.invoice_date,
           due_date: formData.due_date,
           transaction_memo: formData.transaction_memo,
-          payment_source_detail: formData.payment_source_detail,
+          payment_source_detail: formData.payment_method,
           invoice_receipt_url: formData.invoice_receipt_url,
           status: 'Pending Approval'
         })
@@ -317,39 +315,31 @@ export function TransactionEntryModal({
               </Select>
             </div>
 
-            {/* Payment Method */}
+            {/* Company Card */}
             <div className="space-y-2">
-              <Label htmlFor="payment_method">Payment Method *</Label>
-              <Select value={formData.payment_method} onValueChange={(value) => {
-                const method = paymentMethods.find(m => m.method_name === value);
-                setFormData({
-                  ...formData, 
-                  payment_method: value,
-                  payment_source_detail: method?.account_details || ''
-                });
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paymentMethods.map((method) => (
-                    <SelectItem key={method.id} value={method.method_name}>
-                      {method.method_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Payment Source Detail */}
-            <div className="space-y-2">
-              <Label htmlFor="payment_source">Payment Source Detail *</Label>
-              <Input
-                id="payment_source"
-                value={formData.payment_source_detail}
-                onChange={(e) => setFormData({...formData, payment_source_detail: e.target.value})}
-                placeholder="e.g., Amex Gold x1005"
-              />
+              <Label htmlFor="payment_method">Company Card *</Label>
+              {companyCards.length === 0 ? (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ No Active Company Cards found. Please add a card under Settings &gt; Company Cards.
+                  </p>
+                </div>
+              ) : (
+                <Select value={formData.payment_method} onValueChange={(value) => {
+                  setFormData({ ...formData, payment_method: value });
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company card" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyCards.map((card) => (
+                      <SelectItem key={card.id} value={card.id}>
+                        {card.cardholder_name} - {card.card_type} (•••• {card.last_four})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 

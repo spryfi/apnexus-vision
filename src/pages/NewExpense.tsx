@@ -21,7 +21,7 @@ export default function NewExpense() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [companyCards, setCompanyCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Form state
@@ -32,8 +32,7 @@ export default function NewExpense() {
     invoice_date: '',
     due_date: '',
     amount: '',
-    payment_method: '',
-    payment_source_detail: '',
+        payment_method: '',
     transaction_memo: ''
   });
 
@@ -43,17 +42,17 @@ export default function NewExpense() {
 
   const fetchDropdownData = async () => {
     try {
-      const [vendorsRes, employeesRes, categoriesRes, paymentMethodsRes] = await Promise.all([
+      const [vendorsRes, employeesRes, categoriesRes, companyCardsRes] = await Promise.all([
         supabase.from('vendors').select('*').order('vendor_name'),
         supabase.from('employees').select('*').order('employee_name'),
         supabase.from('expense_categories').select('*').order('category_name'),
-        supabase.from('payment_methods').select('*').eq('is_active', true).order('method_name')
+        supabase.from('company_cards').select('*').eq('is_active', true).order('cardholder_name')
       ]);
 
       if (vendorsRes.data) setVendors(vendorsRes.data);
       if (employeesRes.data) setEmployees(employeesRes.data);
       if (categoriesRes.data) setCategories(categoriesRes.data);
-      if (paymentMethodsRes.data) setPaymentMethods(paymentMethodsRes.data);
+      if (companyCardsRes.data) setCompanyCards(companyCardsRes.data);
     } catch (error) {
       console.error('Error fetching dropdown data:', error);
       toast({
@@ -73,7 +72,6 @@ export default function NewExpense() {
       formData.invoice_date &&
       formData.transaction_memo && formData.transaction_memo.length >= 20 &&
       formData.payment_method &&
-      formData.payment_source_detail &&
       documentUrl
     );
   };
@@ -101,8 +99,8 @@ export default function NewExpense() {
           invoice_date: formData.invoice_date,
           due_date: formData.due_date || formData.invoice_date,
           transaction_memo: formData.transaction_memo,
-          payment_method: formData.payment_method as "Credit Card" | "ACH" | "Check" | "Fleet Fuel Card" | "Debit Card",
-          payment_source_detail: formData.payment_source_detail,
+          payment_method: "Credit Card",
+          payment_source_detail: formData.payment_method,
           invoice_receipt_url: documentUrl,
           status: 'Pending Approval'
         });
@@ -123,7 +121,6 @@ export default function NewExpense() {
         due_date: '',
         amount: '',
         payment_method: '',
-        payment_source_detail: '',
         transaction_memo: ''
       });
       setDocumentUrl('');
@@ -290,39 +287,31 @@ export default function NewExpense() {
                 </Select>
               </div>
 
-              {/* Payment Method */}
-              <div className="space-y-2">
-                <Label htmlFor="payment_method">Payment Method *</Label>
-                <Select value={formData.payment_method} onValueChange={(value) => {
-                  const method = paymentMethods.find(m => m.method_name === value);
-                  setFormData({
-                    ...formData, 
-                    payment_method: value,
-                    payment_source_detail: method?.account_details || ''
-                  });
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.id} value={method.method_name}>
-                        {method.method_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Payment Source Detail */}
-              <div className="space-y-2">
-                <Label htmlFor="payment_source">Payment Source Detail *</Label>
-                <Input
-                  id="payment_source"
-                  value={formData.payment_source_detail}
-                  onChange={(e) => setFormData({...formData, payment_source_detail: e.target.value})}
-                  placeholder="e.g., Corporate Debit Card"
-                />
+              {/* Company Card */}
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="payment_method">Company Card *</Label>
+                {companyCards.length === 0 ? (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-800">
+                      ⚠️ No Active Company Cards found. Please add a card under Settings &gt; Company Cards.
+                    </p>
+                  </div>
+                ) : (
+                  <Select value={formData.payment_method} onValueChange={(value) => {
+                    setFormData({ ...formData, payment_method: value });
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select company card" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companyCards.map((card) => (
+                        <SelectItem key={card.id} value={card.id}>
+                          {card.cardholder_name} - {card.card_type} (•••• {card.last_four})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
 

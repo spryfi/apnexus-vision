@@ -35,6 +35,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [companyCards, setCompanyCards] = useState<any[]>([]);
   const [showAddVendor, setShowAddVendor] = useState(false);
   const { toast } = useToast();
 
@@ -68,19 +69,22 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
 
   const fetchDropdownData = async () => {
     try {
-      const [vendorsRes, employeesRes, categoriesRes] = await Promise.all([
+      const [vendorsRes, employeesRes, categoriesRes, cardsRes] = await Promise.all([
         supabase.from('vendors').select('id, vendor_name').order('vendor_name'),
         supabase.from('employees').select('id, employee_name').order('employee_name'),
         supabase.from('expense_categories').select('id, category_name').order('category_name'),
+        supabase.from('company_cards').select('*').eq('is_active', true).order('cardholder_name')
       ]);
 
       if (vendorsRes.error) throw vendorsRes.error;
       if (employeesRes.error) throw employeesRes.error;
       if (categoriesRes.error) throw categoriesRes.error;
+      if (cardsRes.error) throw cardsRes.error;
 
       setVendors(vendorsRes.data || []);
       setEmployees(employeesRes.data || []);
       setExpenseCategories(categoriesRes.data || []);
+      setCompanyCards(cardsRes.data || []);
     } catch (error) {
       toast({
         title: "Error loading data",
@@ -141,7 +145,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
       // Validate required fields
       if (!formData.vendor_id || !formData.invoice_date || !formData.amount || 
           !formData.expense_category_id || !formData.purchase_description || 
-          !formData.employee_id || !formData.payment_method) {
+          !formData.employee_id || !formData.payment_source) {
         throw new Error("Please fill in all required fields");
       }
 
@@ -151,7 +155,8 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
           ...formData,
           amount: parseFloat(formData.amount),
           status: 'Pending Approval' as const,
-          payment_method: formData.payment_method as any
+          payment_method: "Credit Card" as any,
+          payment_source_detail: formData.payment_source
         }]);
 
       if (error) throw error;
@@ -368,19 +373,27 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="payment_method">Payment Method *</Label>
-              <Select value={formData.payment_method} onValueChange={(value) => setFormData({ ...formData, payment_method: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Credit Card">Credit Card</SelectItem>
-                  <SelectItem value="ACH">ACH</SelectItem>
-                  <SelectItem value="Check">Check</SelectItem>
-                  <SelectItem value="Fleet Fuel Card">Fleet Fuel Card</SelectItem>
-                  <SelectItem value="Debit Card">Debit Card</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="payment_method">Company Card *</Label>
+              {companyCards.length === 0 ? (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ No Active Company Cards found. Please add a card under Settings &gt; Company Cards.
+                  </p>
+                </div>
+              ) : (
+                <Select value={formData.payment_source} onValueChange={(value) => setFormData({ ...formData, payment_source: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company card" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyCards.map((card) => (
+                      <SelectItem key={card.id} value={card.id}>
+                        {card.cardholder_name} - {card.card_type} (•••• {card.last_four})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="payment_source">Payment Source</Label>
