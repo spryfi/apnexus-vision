@@ -134,7 +134,7 @@ export default function APFortress() {
         </CardHeader>
         <CardContent>
           {entryRequiredTransactions.length === 0 ? (
-            <QuickStartActionHub onEnterExpense={() => setSelectedTransaction({} as Transaction)} />
+            <QuickStartActionHub onEnterExpense={() => window.location.href = '/new-expense'} />
           ) : (
             <div className="space-y-4">
               {entryRequiredTransactions.map((transaction) => (
