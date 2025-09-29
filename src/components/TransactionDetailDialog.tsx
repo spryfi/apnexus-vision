@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -50,14 +50,16 @@ export function TransactionDetailDialog({
   const { toast } = useToast();
   const { userProfile } = useAuth();
 
-  useState(() => {
-    checkAdminStatus();
-  });
-
   const checkAdminStatus = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setIsAdmin(user?.email === 'paul@spryfi.net');
   };
+
+  useEffect(() => {
+    if (open) {
+      checkAdminStatus();
+    }
+  }, [open]);
 
   const [formData, setFormData] = useState({
     status: transaction.status,
