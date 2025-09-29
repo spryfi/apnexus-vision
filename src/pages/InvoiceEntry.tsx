@@ -51,7 +51,9 @@ const InvoiceEntry: React.FC = () => {
     vendor_name: false,
     amount: false,
     invoice_date: false,
-    receipt_required: false
+    receipt_required: false,
+    expense_category: false,
+    description_length: false
   });
 
   const handleFileUpload = async (file: File) => {
@@ -206,7 +208,9 @@ const InvoiceEntry: React.FC = () => {
       vendor_name: !formData.vendor_name.trim(),
       amount: !formData.amount || parseFloat(formData.amount) <= 0,
       invoice_date: !formData.invoice_date,
-      receipt_required: !fileUrl
+      receipt_required: !fileUrl,
+      expense_category: !formData.expense_category.trim(),
+      description_length: !formData.description || formData.description.trim().length < 20
     };
 
     setFormErrors(errors);
@@ -682,7 +686,7 @@ const InvoiceEntry: React.FC = () => {
               <div className="pt-4 border-t">
                 <Button 
                   onClick={saveTransaction}
-                  disabled={!uploadedFile || isSaving || !formData.vendor_name.trim() || !formData.amount || !formData.invoice_date}
+                  disabled={!uploadedFile || isSaving || !formData.vendor_name.trim() || !formData.amount || parseFloat(formData.amount) <= 0 || !formData.invoice_date || !formData.expense_category.trim() || !formData.description || formData.description.trim().length < 20}
                   size="lg"
                   className="w-full"
                 >
@@ -699,8 +703,8 @@ const InvoiceEntry: React.FC = () => {
                   )}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  {(!uploadedFile || !formData.vendor_name.trim() || !formData.amount || !formData.invoice_date) 
-                    ? "Please complete all required fields and upload receipt" 
+                  {(!uploadedFile || !formData.vendor_name.trim() || !formData.amount || parseFloat(formData.amount) <= 0 || !formData.invoice_date || !formData.expense_category.trim() || !formData.description || formData.description.trim().length < 20) 
+                    ? "Please complete all required fields (20+ char description, category, amount > 0, receipt)" 
                     : "Transaction will be saved with 'Entry Required' status"}
                 </p>
               </div>
