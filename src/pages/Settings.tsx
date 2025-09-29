@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings as SettingsIcon, CreditCard, CheckSquare, Users, Building, Tag } from "lucide-react";
+import { Settings as SettingsIcon, CreditCard, CheckSquare, Users, Building, Tag, Wallet } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CardManagement from "@/components/CardManagement";
 import TaskDashboard from "@/components/TaskDashboard";
+import { PaymentMethodsManager } from "@/components/PaymentMethodsManager";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -63,11 +64,15 @@ export default function Settings() {
       </div>
 
       {/* Settings Tabs */}
-      <Tabs defaultValue="cards" className="space-y-4">
+      <Tabs defaultValue="payments" className="space-y-4">
         {isMobile ? (
           /* Mobile: Scrollable horizontal tabs */
           <div className="overflow-x-auto">
             <TabsList className="inline-flex h-auto min-w-max gap-1 p-1 bg-muted">
+              <TabsTrigger value="payments" className="whitespace-nowrap text-xs px-3 py-2">
+                <Wallet className="h-3 w-3 mr-1" />
+                Payments
+              </TabsTrigger>
               <TabsTrigger value="cards" className="whitespace-nowrap text-xs px-3 py-2">
                 <CreditCard className="h-3 w-3 mr-1" />
                 Cards
@@ -92,16 +97,28 @@ export default function Settings() {
           </div>
         ) : (
           /* Desktop: Grid layout */
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="payments" className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4" />
+                  Payment Methods
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Manage all payment methods: cards, bank accounts, cash, etc.</p>
+              </TooltipContent>
+            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <TabsTrigger value="cards" className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
-                  Company Cards
+                  Company Cards (Legacy)
                 </TabsTrigger>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Manage credit cards, debit cards, and fuel cards</p>
+                <p>Legacy company cards management</p>
               </TooltipContent>
             </Tooltip>
 
@@ -155,13 +172,28 @@ export default function Settings() {
           </TabsList>
         )}
 
+        {/* Payment Methods Tab */}
+        <TabsContent value="payments">
+          <Card>
+            <CardHeader className={isMobile ? "pb-3" : ""}>
+              <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+                <Wallet className="h-5 w-5" />
+                Payment Methods Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className={isMobile ? "p-3" : ""}>
+              <PaymentMethodsManager />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Company Cards Tab */}
         <TabsContent value="cards">
           <Card>
             <CardHeader className={isMobile ? "pb-3" : ""}>
               <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
                 <CreditCard className="h-5 w-5" />
-                Company Cards Management
+                Company Cards Management (Legacy)
               </CardTitle>
             </CardHeader>
             <CardContent className={isMobile ? "p-3" : ""}>

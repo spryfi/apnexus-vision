@@ -69,22 +69,22 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
 
   const fetchDropdownData = async () => {
     try {
-      const [vendorsRes, employeesRes, categoriesRes, cardsRes] = await Promise.all([
+      const [vendorsRes, employeesRes, categoriesRes, paymentMethodsRes] = await Promise.all([
         supabase.from('vendors').select('id, vendor_name').order('vendor_name'),
         supabase.from('employees').select('id, employee_name').order('employee_name'),
         supabase.from('expense_categories').select('id, category_name').order('category_name'),
-        supabase.from('company_cards').select('*').eq('is_active', true).order('cardholder_name')
+        supabase.from('payment_methods').select('*').eq('is_active', true).order('method_name')
       ]);
 
       if (vendorsRes.error) throw vendorsRes.error;
       if (employeesRes.error) throw employeesRes.error;
       if (categoriesRes.error) throw categoriesRes.error;
-      if (cardsRes.error) throw cardsRes.error;
+      if (paymentMethodsRes.error) throw paymentMethodsRes.error;
 
       setVendors(vendorsRes.data || []);
       setEmployees(employeesRes.data || []);
       setExpenseCategories(categoriesRes.data || []);
-      setCompanyCards(cardsRes.data || []);
+      setCompanyCards(paymentMethodsRes.data || []);
     } catch (error) {
       toast({
         title: "Error loading data",
@@ -373,22 +373,22 @@ export function AddTransactionDialog({ open, onOpenChange, onSuccess }: AddTrans
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="payment_method">Company Card *</Label>
+              <Label htmlFor="payment_method">Payment Method *</Label>
               {companyCards.length === 0 ? (
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                   <p className="text-sm text-yellow-800">
-                    ⚠️ No Active Company Cards found. Please add a card under Settings &gt; Company Cards.
+                    ⚠️ No active payment methods found. Please add one under Settings &gt; Payment Methods.
                   </p>
                 </div>
               ) : (
                 <Select value={formData.payment_source} onValueChange={(value) => setFormData({ ...formData, payment_source: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select company card" />
+                    <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
-                    {companyCards.map((card) => (
-                      <SelectItem key={card.id} value={card.id}>
-                        {card.cardholder_name} - {card.card_type} (•••• {card.last_four})
+                    {companyCards.map((method) => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.method_name} ({method.method_type})
                       </SelectItem>
                     ))}
                   </SelectContent>

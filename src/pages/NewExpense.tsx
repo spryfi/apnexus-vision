@@ -42,17 +42,17 @@ export default function NewExpense() {
 
   const fetchDropdownData = async () => {
     try {
-      const [vendorsRes, employeesRes, categoriesRes, companyCardsRes] = await Promise.all([
+      const [vendorsRes, employeesRes, categoriesRes, paymentMethodsRes] = await Promise.all([
         supabase.from('vendors').select('*').order('vendor_name'),
         supabase.from('employees').select('*').order('employee_name'),
         supabase.from('expense_categories').select('*').order('category_name'),
-        supabase.from('company_cards').select('*').eq('is_active', true).order('cardholder_name')
+        supabase.from('payment_methods').select('*').eq('is_active', true).order('method_name')
       ]);
 
       if (vendorsRes.data) setVendors(vendorsRes.data);
       if (employeesRes.data) setEmployees(employeesRes.data);
       if (categoriesRes.data) setCategories(categoriesRes.data);
-      if (companyCardsRes.data) setCompanyCards(companyCardsRes.data);
+      if (paymentMethodsRes.data) setCompanyCards(paymentMethodsRes.data);
     } catch (error) {
       console.error('Error fetching dropdown data:', error);
       toast({
@@ -287,13 +287,13 @@ export default function NewExpense() {
                 </Select>
               </div>
 
-              {/* Company Card */}
+              {/* Payment Method */}
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="payment_method">Company Card *</Label>
+                <Label htmlFor="payment_method">Payment Method *</Label>
                 {companyCards.length === 0 ? (
                   <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                     <p className="text-sm text-yellow-800">
-                      ⚠️ No Active Company Cards found. Please add a card under Settings &gt; Company Cards.
+                      ⚠️ No active payment methods found. Please add one under Settings &gt; Payment Methods.
                     </p>
                   </div>
                 ) : (
@@ -301,12 +301,12 @@ export default function NewExpense() {
                     setFormData({ ...formData, payment_method: value });
                   }}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select company card" />
+                      <SelectValue placeholder="Select payment method" />
                     </SelectTrigger>
                     <SelectContent>
-                      {companyCards.map((card) => (
-                        <SelectItem key={card.id} value={card.id}>
-                          {card.cardholder_name} - {card.card_type} (•••• {card.last_four})
+                      {companyCards.map((method) => (
+                        <SelectItem key={method.id} value={method.id}>
+                          {method.method_name} ({method.method_type})
                         </SelectItem>
                       ))}
                     </SelectContent>
