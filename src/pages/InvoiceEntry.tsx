@@ -350,17 +350,258 @@ const InvoiceEntry: React.FC = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-8">
           
-          {/* Left Panel - Document Upload */}
-          <Card className={`h-fit ${formErrors.receipt_required ? 'border-destructive' : ''}`}>
+          {/* Transaction Details Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Transaction Details
+              </CardTitle>
+              <CardDescription>
+                Fill in the transaction information below
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="vendor">
+                    Vendor <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.vendor_name}
+                    onValueChange={(value) => {
+                      handleInputChange('vendor_name', value);
+                      validateField('vendor_name', value);
+                    }}
+                  >
+                    <SelectTrigger className={formErrors.vendor_name ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="Select vendor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AMERICAN TOWER">AMERICAN TOWER</SelectItem>
+                      <SelectItem value="CROWN CASTLE">CROWN CASTLE</SelectItem>
+                      <SelectItem value="SBA COMMUNICATIONS">SBA COMMUNICATIONS</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formErrors.vendor_name && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      Vendor selection is required
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="date">
+                    Date <span className="text-destructive">*</span>
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.invoice_date && "text-muted-foreground",
+                          formErrors.invoice_date && "border-destructive"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.invoice_date ? format(formData.invoice_date, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.invoice_date}
+                        onSelect={(date) => {
+                          handleInputChange('invoice_date', date);
+                          validateField('invoice_date', date);
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {formErrors.invoice_date && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      Date is required
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="amount">
+                    Total Amount <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.amount}
+                    onChange={(e) => {
+                      handleInputChange('amount', e.target.value);
+                      validateField('amount', e.target.value);
+                    }}
+                    className={formErrors.amount ? 'border-destructive' : ''}
+                  />
+                  {formErrors.amount && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      Valid amount is required
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="employee">
+                    Employee <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.employee_name}
+                    onValueChange={(value) => handleInputChange('employee_name', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="John Smith">John Smith</SelectItem>
+                      <SelectItem value="Jane Doe">Jane Doe</SelectItem>
+                      <SelectItem value="Jesse">Jesse</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category">
+                    Expense Category <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.expense_category}
+                    onValueChange={(value) => {
+                      handleInputChange('expense_category', value);
+                      validateField('expense_category', value);
+                    }}
+                  >
+                    <SelectTrigger className={formErrors.expense_category ? 'border-destructive' : ''}>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Materials - Job Supplies">Materials - Job Supplies</SelectItem>
+                      <SelectItem value="Vehicle Maintenance">Vehicle Maintenance</SelectItem>
+                      <SelectItem value="Office Supplies">Office Supplies</SelectItem>
+                      <SelectItem value="Travel">Travel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formErrors.expense_category && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      Category selection is required
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="payment">
+                    Payment Method <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={formData.payment_method}
+                    onValueChange={(value) => handleInputChange('payment_method', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Credit Card">Credit Card</SelectItem>
+                      <SelectItem value="ACH">ACH</SelectItem>
+                      <SelectItem value="Check">Check</SelectItem>
+                      <SelectItem value="Fleet Fuel Card">Fleet Fuel Card</SelectItem>
+                      <SelectItem value="Debit Card">Debit Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Line Items Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">Line Items</Label>
+                  <Button variant="outline" size="sm">
+                    + Add Item
+                  </Button>
+                </div>
+                
+                <div className="border rounded-lg p-4 space-y-4">
+                  <div className="grid grid-cols-12 gap-4 text-sm font-medium text-muted-foreground">
+                    <div className="col-span-5">Description</div>
+                    <div className="col-span-2">Quantity</div>
+                    <div className="col-span-2">Unit Price</div>
+                    <div className="col-span-2">Total</div>
+                    <div className="col-span-1"></div>
+                  </div>
+                  
+                  <div className="grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-5">
+                      <Input placeholder="Item description" />
+                    </div>
+                    <div className="col-span-2">
+                      <Input type="number" placeholder="1" defaultValue="1" />
+                    </div>
+                    <div className="col-span-2">
+                      <Input type="number" placeholder="0.00" defaultValue="0" />
+                    </div>
+                    <div className="col-span-2">
+                      <Input type="number" placeholder="0.00" defaultValue="0" />
+                    </div>
+                    <div className="col-span-1">
+                      <Button variant="ghost" size="sm">×</Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recurring Expense Checkbox */}
+              <div className="flex items-center space-x-2">
+                <input type="checkbox" id="recurring" className="rounded border-input" />
+                <Label htmlFor="recurring">Make this a recurring expense</Label>
+              </div>
+
+              {/* Transaction Memo */}
+              <div className="space-y-2">
+                <Label htmlFor="memo">Transaction Memo</Label>
+                <Textarea
+                  placeholder="Optional notes about this transaction..."
+                  value={formData.description}
+                  onChange={(e) => {
+                    handleInputChange('description', e.target.value);
+                    validateField('description', e.target.value);
+                  }}
+                  className={formErrors.description_length ? 'border-destructive' : ''}
+                  rows={3}
+                />
+                {formErrors.description_length && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    Description must be at least 10 characters
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Upload Receipt Section */}
+          <Card className={`${formErrors.receipt_required ? 'border-destructive' : ''}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="h-5 w-5" />
-                Step 1: Upload Your Invoice
+                Upload Receipt
               </CardTitle>
               <CardDescription>
-                Drag and drop your invoice or receipt, or click to browse
+                Upload your invoice or receipt for this transaction
                 {formErrors.receipt_required && (
                   <span className="text-destructive block mt-1 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" />
@@ -383,10 +624,10 @@ const InvoiceEntry: React.FC = () => {
                 >
                   <Upload className={`h-12 w-12 mx-auto mb-4 ${formErrors.receipt_required ? 'text-destructive' : 'text-muted-foreground'}`} />
                   <p className="text-lg font-medium text-foreground mb-2">
-                    Drop your invoice here
+                    Upload your invoice or receipt to get started
                   </p>
                   <p className="text-muted-foreground mb-4">
-                    Supports PDF, JPEG, PNG files up to 10MB
+                    Supports PDF and image files
                   </p>
                   <Button variant="outline">
                     Choose File
@@ -444,338 +685,120 @@ const InvoiceEntry: React.FC = () => {
                     </div>
                   )}
 
-                  <Button 
-                    onClick={() => {
-                      setUploadedFile(null);
-                      setFileUrl("");
-                      setHasExtracted(false);
-                      setExtractedData({});
-                      validateField('receipt', null);
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Upload Different File
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  <div className="flex gap-4">
+                    <Button 
+                      onClick={extractWithAI}
+                      disabled={isExtracting || hasExtracted}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      {isExtracting ? (
+                        <>
+                          <Sparkles className="h-5 w-5 mr-2 animate-spin" />
+                          Extracting with AI...
+                        </>
+                      ) : hasExtracted ? (
+                        <>
+                          <CheckCircle className="h-5 w-5 mr-2" />
+                          AI Extraction Complete
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-5 w-5 mr-2" />
+                          ✨ Auto-Extract with AI
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => {
+                        setUploadedFile(null);
+                        setFileUrl("");
+                        setHasExtracted(false);
+                        setExtractedData({});
+                        validateField('receipt', null);
+                      }}
+                      variant="outline"
+                    >
+                      Upload Different File
+                    </Button>
+                  </div>
 
-          {/* Right Panel - Invoice Details */}
-          <Card className={`h-fit ${!uploadedFile ? 'opacity-50 pointer-events-none' : ''}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Step 2: Extract & Review Details
-              </CardTitle>
-              <CardDescription>
-                Use AI to automatically extract invoice information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              
-              {/* AI Extraction Button */}
-              {uploadedFile && !hasExtracted && (
-                <div className="text-center space-y-4">
-                  <Button 
-                    onClick={extractWithAI}
-                    disabled={isExtracting}
-                    size="lg"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  >
-                    {isExtracting ? (
-                      <>
-                        <Sparkles className="h-5 w-5 mr-2 animate-spin" />
-                        Extracting with AI...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-5 w-5 mr-2" />
-                        ✨ Auto-Extract Invoice Details with AI
-                      </>
-                    )}
-                  </Button>
-                  
-                  {isExtracting && (
+                  {/* AI Extraction Progress */}
+                  {isExtracting && extractionProgress > 0 && (
                     <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>AI Processing...</span>
+                        <span>{extractionProgress}%</span>
+                      </div>
                       <Progress value={extractionProgress} className="w-full" />
-                      <p className="text-sm text-muted-foreground">
-                        {extractionProgress < 30 ? 'Uploading document...' :
-                         extractionProgress < 70 ? 'Processing with AI...' :
-                         'Finalizing extraction...'}
+                    </div>
+                  )}
+
+                  {/* AI Extraction Results */}
+                  {hasExtracted && Object.keys(extractedData).length > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="font-medium text-green-800">AI Extraction Results</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {extractedData.vendor_name && (
+                          <div>
+                            <span className="font-medium">Vendor:</span> {extractedData.vendor_name}
+                          </div>
+                        )}
+                        {extractedData.amount && (
+                          <div>
+                            <span className="font-medium">Amount:</span> ${extractedData.amount}
+                          </div>
+                        )}
+                        {extractedData.invoice_date && (
+                          <div>
+                            <span className="font-medium">Date:</span> {extractedData.invoice_date}
+                          </div>
+                        )}
+                        {extractedData.invoice_number && (
+                          <div>
+                            <span className="font-medium">Invoice #:</span> {extractedData.invoice_number}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-green-700 mt-2">
+                        Data has been automatically filled in the form above. Please review and complete any missing fields.
                       </p>
                     </div>
                   )}
                 </div>
               )}
-
-              {/* AI Extraction Results */}
-              {hasExtracted && Object.keys(extractedData).length > 0 && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <span className="font-medium text-green-800">AI Extraction Complete</span>
-                  </div>
-                  <div className="grid grid-cols-1 gap-2 text-sm">
-                    {extractedData.vendor_name && (
-                      <div>
-                        <span className="font-medium text-green-700">Vendor:</span>
-                        <span className="ml-2 text-green-600">{extractedData.vendor_name}</span>
-                      </div>
-                    )}
-                    {extractedData.amount && (
-                      <div>
-                        <span className="font-medium text-green-700">Amount:</span>
-                        <span className="ml-2 text-green-600">${extractedData.amount}</span>
-                      </div>
-                    )}
-                    {extractedData.invoice_date && (
-                      <div>
-                        <span className="font-medium text-green-700">Date:</span>
-                        <span className="ml-2 text-green-600">{extractedData.invoice_date}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Form Fields */}
-              <div className="space-y-4">
-                
-                {/* Vendor Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="vendor_name" className="flex items-center gap-1">
-                    Vendor Name *
-                    {formErrors.vendor_name && <AlertCircle className="h-4 w-4 text-destructive" />}
-                  </Label>
-                  <Input
-                    id="vendor_name"
-                    type="text"
-                    value={formData.vendor_name}
-                    onChange={(e) => {
-                      handleInputChange('vendor_name', e.target.value);
-                      validateField('vendor_name', e.target.value);
-                    }}
-                    placeholder="Enter vendor name"
-                    className={formErrors.vendor_name ? 'border-destructive' : ''}
-                  />
-                  {formErrors.vendor_name && (
-                    <p className="text-sm text-destructive">Vendor name is required</p>
-                  )}
-                </div>
-
-                {/* Amount */}
-                <div className="space-y-2">
-                  <Label htmlFor="amount" className="flex items-center gap-1">
-                    Total Amount *
-                    {formErrors.amount && <AlertCircle className="h-4 w-4 text-destructive" />}
-                  </Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => {
-                      handleInputChange('amount', e.target.value);
-                      validateField('amount', e.target.value);
-                    }}
-                    placeholder="0.00"
-                    className={formErrors.amount ? 'border-destructive' : ''}
-                  />
-                  {formErrors.amount && (
-                    <p className="text-sm text-destructive">Valid amount is required</p>
-                  )}
-                </div>
-
-                {/* Invoice Date */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    Invoice Date *
-                    {formErrors.invoice_date && <AlertCircle className="h-4 w-4 text-destructive" />}
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.invoice_date && "text-muted-foreground",
-                          formErrors.invoice_date && "border-destructive"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.invoice_date ? (
-                          format(formData.invoice_date, "PPP")
-                        ) : (
-                          <span>Pick invoice date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.invoice_date}
-                        onSelect={(date) => {
-                          handleInputChange('invoice_date', date);
-                          validateField('invoice_date', date);
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {formErrors.invoice_date && (
-                    <p className="text-sm text-destructive">Invoice date is required</p>
-                  )}
-                </div>
-
-                {/* Due Date */}
-                <div className="space-y-2">
-                  <Label>Due Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.due_date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.due_date ? (
-                          format(formData.due_date, "PPP")
-                        ) : (
-                          <span>Pick due date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.due_date}
-                        onSelect={(date) => handleInputChange('due_date', date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Invoice Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="invoice_number">Invoice Number</Label>
-                  <Input
-                    id="invoice_number"
-                    type="text"
-                    value={formData.invoice_number}
-                    onChange={(e) => handleInputChange('invoice_number', e.target.value)}
-                    placeholder="Enter invoice number"
-                  />
-                </div>
-
-                {/* Employee */}
-                <div className="space-y-2">
-                  <Label htmlFor="employee_name">Employee</Label>
-                  <Input
-                    id="employee_name"
-                    type="text"
-                    value={formData.employee_name}
-                    onChange={(e) => handleInputChange('employee_name', e.target.value)}
-                    placeholder="Enter employee name"
-                  />
-                </div>
-
-                {/* Payment Method */}
-                <div className="space-y-2">
-                  <Label>Payment Method</Label>
-                  <Select 
-                    value={formData.payment_method}
-                    onValueChange={(value) => handleInputChange('payment_method', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Credit Card">Credit Card</SelectItem>
-                      <SelectItem value="ACH">ACH</SelectItem>
-                      <SelectItem value="Check">Check</SelectItem>
-                      <SelectItem value="Fleet Fuel Card">Fleet Fuel Card</SelectItem>
-                      <SelectItem value="Debit Card">Debit Card</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Expense Category */}
-                <div className="space-y-2">
-                  <Label htmlFor="expense_category" className="flex items-center gap-1">
-                    Expense Category *
-                    {formErrors.expense_category && <AlertCircle className="h-4 w-4 text-destructive" />}
-                  </Label>
-                  <Input
-                    id="expense_category"
-                    type="text"
-                    value={formData.expense_category}
-                    onChange={(e) => {
-                      handleInputChange('expense_category', e.target.value);
-                      validateField('expense_category', e.target.value);
-                    }}
-                    placeholder="Enter expense category"
-                    className={formErrors.expense_category ? 'border-destructive' : ''}
-                  />
-                  {formErrors.expense_category && (
-                    <p className="text-sm text-destructive">Expense category is required</p>
-                  )}
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="flex items-center gap-1">
-                    Description *
-                    {formErrors.description_length && <AlertCircle className="h-4 w-4 text-destructive" />}
-                  </Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => {
-                      handleInputChange('description', e.target.value);
-                      validateField('description', e.target.value);
-                    }}
-                    placeholder="Enter invoice description (minimum 10 characters)"
-                    rows={3}
-                    className={formErrors.description_length ? 'border-destructive' : ''}
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>
-                      {formErrors.description_length && (
-                        <span className="text-destructive">Minimum 10 characters required</span>
-                      )}
-                    </span>
-                    <span>{formData.description.length} characters</span>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <Button variant="outline" onClick={() => window.history.back()} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={saveTransaction}
-                    disabled={isSaving || !validateForm()}
-                    className="flex-1"
-                  >
-                    {isSaving ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Saving...
-                      </>
-                    ) : (
-                      'Save Invoice'
-                    )}
-                  </Button>
-                </div>
-              </div>
             </CardContent>
           </Card>
+
+          {/* Submit Button */}
+          <div className="flex justify-center">
+            <Button 
+              onClick={saveTransaction}
+              disabled={isSaving}
+              size="lg"
+              className="w-full max-w-md"
+            >
+              {isSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving Transaction...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Save Transaction
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Status Message */}
+          <div className="text-center text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
+            Transaction will be saved with "Pending Approval" status
+          </div>
         </div>
       </div>
     </div>
