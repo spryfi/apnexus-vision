@@ -350,21 +350,166 @@ const InvoiceEntry: React.FC = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           
-          {/* Transaction Details Form */}
-          <Card>
+          {/* Left Panel - Document Upload */}
+          <Card className={`h-fit ${formErrors.receipt_required ? 'border-destructive' : ''}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                Step 1: Upload Your Invoice
+              </CardTitle>
+              <CardDescription>
+                Drag and drop your invoice or receipt, or click to browse
+                {formErrors.receipt_required && (
+                  <span className="text-destructive block mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    Receipt upload is required before saving
+                  </span>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!uploadedFile ? (
+                <div
+                  className={`border-2 border-dashed rounded-lg p-12 text-center hover:border-muted-foreground/50 transition-colors cursor-pointer ${
+                    formErrors.receipt_required 
+                      ? 'border-destructive/50 bg-destructive/5' 
+                      : 'border-muted-foreground/25'
+                  }`}
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className={`h-12 w-12 mx-auto mb-4 ${formErrors.receipt_required ? 'text-destructive' : 'text-muted-foreground'}`} />
+                  <p className="text-lg font-medium text-foreground mb-2">
+                    Drop your invoice here
+                  </p>
+                  <p className="text-muted-foreground mb-4">
+                    Supports PDF, JPEG, PNG files up to 10MB
+                  </p>
+                  <Button variant="outline">
+                    Choose File
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleFileUpload(file);
+                        validateField('receipt', file);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                    <FileText className="h-8 w-8 text-primary" />
+                    <div className="flex-1">
+                      <p className="font-medium">{uploadedFile.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </div>
+
+                  {fileUrl && (
+                    <div className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Preview</span>
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Full Size
+                        </Button>
+                      </div>
+                      <div className="bg-muted rounded-lg p-4 text-center">
+                        {uploadedFile.type === 'application/pdf' ? (
+                          <div>
+                            <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground">PDF Document</p>
+                          </div>
+                        ) : (
+                          <img 
+                            src={fileUrl} 
+                            alt="Invoice preview" 
+                            className="max-w-full max-h-64 mx-auto rounded"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <Button 
+                    onClick={() => {
+                      setUploadedFile(null);
+                      setFileUrl("");
+                      setHasExtracted(false);
+                      setExtractedData({});
+                      validateField('receipt', null);
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Upload Different File
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Right Panel - Invoice Details */}
+          <Card className={`h-fit ${!uploadedFile ? 'opacity-50 pointer-events-none' : ''}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
-                Invoice Details
+                Step 2: Extract & Review Details
               </CardTitle>
               <CardDescription>
-                Enter or review the invoice information below
+                Use AI to automatically extract invoice information
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               
+              {/* AI Extraction Button */}
+              {uploadedFile && !hasExtracted && (
+                <div className="text-center space-y-4">
+                  <Button 
+                    onClick={extractWithAI}
+                    disabled={isExtracting}
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    {isExtracting ? (
+                      <>
+                        <Sparkles className="h-5 w-5 mr-2 animate-spin" />
+                        Extracting with AI...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5 mr-2" />
+                        ✨ Auto-Extract Invoice Details with AI
+                      </>
+                    )}
+                  </Button>
+                  
+                  {isExtracting && (
+                    <div className="space-y-2">
+                      <Progress value={extractionProgress} className="w-full" />
+                      <p className="text-sm text-muted-foreground">
+                        {extractionProgress < 30 ? 'Uploading document...' :
+                         extractionProgress < 70 ? 'Processing with AI...' :
+                         'Finalizing extraction...'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* AI Extraction Results */}
               {hasExtracted && Object.keys(extractedData).length > 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -372,7 +517,7 @@ const InvoiceEntry: React.FC = () => {
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <span className="font-medium text-green-800">AI Extraction Complete</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 gap-2 text-sm">
                     {extractedData.vendor_name && (
                       <div>
                         <span className="font-medium text-green-700">Vendor:</span>
@@ -385,12 +530,18 @@ const InvoiceEntry: React.FC = () => {
                         <span className="ml-2 text-green-600">${extractedData.amount}</span>
                       </div>
                     )}
+                    {extractedData.invoice_date && (
+                      <div>
+                        <span className="font-medium text-green-700">Date:</span>
+                        <span className="ml-2 text-green-600">{extractedData.invoice_date}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* Form Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 
                 {/* Vendor Name */}
                 <div className="space-y-2">
@@ -574,203 +725,57 @@ const InvoiceEntry: React.FC = () => {
                     <p className="text-sm text-destructive">Expense category is required</p>
                   )}
                 </div>
-              </div>
 
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description" className="flex items-center gap-1">
-                  Description *
-                  {formErrors.description_length && <AlertCircle className="h-4 w-4 text-destructive" />}
-                </Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => {
-                    handleInputChange('description', e.target.value);
-                    validateField('description', e.target.value);
-                  }}
-                  placeholder="Enter invoice description (minimum 10 characters)"
-                  rows={3}
-                  className={formErrors.description_length ? 'border-destructive' : ''}
-                />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>
-                    {formErrors.description_length && (
-                      <span className="text-destructive">Minimum 10 characters required</span>
-                    )}
-                  </span>
-                  <span>{formData.description.length} characters</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Document Upload Section */}
-          <Card className={`${formErrors.receipt_required ? 'border-destructive' : ''}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Upload Invoice Receipt *
-                {formErrors.receipt_required && <AlertCircle className="h-4 w-4 text-destructive" />}
-              </CardTitle>
-              <CardDescription>
-                Drag and drop your invoice or receipt, or click to browse
-                {formErrors.receipt_required && (
-                  <span className="text-destructive block mt-1 flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
-                    Receipt upload is required before saving
-                  </span>
-                )}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!uploadedFile ? (
-                <div
-                  className={`border-2 border-dashed rounded-lg p-12 text-center hover:border-muted-foreground/50 transition-colors cursor-pointer ${
-                    formErrors.receipt_required 
-                      ? 'border-destructive/50 bg-destructive/5' 
-                      : 'border-muted-foreground/25'
-                  }`}
-                  onDrop={handleDrop}
-                  onDragOver={(e) => e.preventDefault()}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className={`h-12 w-12 mx-auto mb-4 ${formErrors.receipt_required ? 'text-destructive' : 'text-muted-foreground'}`} />
-                  <p className="text-lg font-medium text-foreground mb-2">
-                    Drop your invoice here
-                  </p>
-                  <p className="text-muted-foreground mb-4">
-                    Supports PDF, JPEG, PNG files up to 10MB
-                  </p>
-                  <Button variant="outline">
-                    Choose File
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="flex items-center gap-1">
+                    Description *
+                    {formErrors.description_length && <AlertCircle className="h-4 w-4 text-destructive" />}
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        handleFileUpload(file);
-                        validateField('receipt', file);
-                      }
+                      handleInputChange('description', e.target.value);
+                      validateField('description', e.target.value);
                     }}
-                    className="hidden"
+                    placeholder="Enter invoice description (minimum 10 characters)"
+                    rows={3}
+                    className={formErrors.description_length ? 'border-destructive' : ''}
                   />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                    <FileText className="h-8 w-8 text-primary" />
-                    <div className="flex-1">
-                      <p className="font-medium">{uploadedFile.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  </div>
-
-                  {fileUrl && (
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">Preview</span>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Full Size
-                        </Button>
-                      </div>
-                      <div className="bg-muted rounded-lg p-4 text-center">
-                        {uploadedFile.type === 'application/pdf' ? (
-                          <div>
-                            <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-2" />
-                            <p className="text-sm text-muted-foreground">PDF Document</p>
-                          </div>
-                        ) : (
-                          <img 
-                            src={fileUrl} 
-                            alt="Invoice preview" 
-                            className="max-w-full max-h-64 mx-auto rounded"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Extraction Button */}
-                  {uploadedFile && !hasExtracted && (
-                    <div className="text-center space-y-4">
-                      <Button 
-                        onClick={extractWithAI}
-                        disabled={isExtracting}
-                        size="lg"
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                      >
-                        {isExtracting ? (
-                          <>
-                            <Sparkles className="h-5 w-5 mr-2 animate-spin" />
-                            Extracting with AI...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-5 w-5 mr-2" />
-                            ✨ Auto-Extract Invoice Details with AI
-                          </>
-                        )}
-                      </Button>
-                      
-                      {isExtracting && (
-                        <div className="space-y-2">
-                          <Progress value={extractionProgress} className="w-full" />
-                          <p className="text-sm text-muted-foreground">
-                            {extractionProgress < 30 ? 'Uploading document...' :
-                             extractionProgress < 70 ? 'Processing with AI...' :
-                             'Finalizing extraction...'}
-                          </p>
-                        </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>
+                      {formErrors.description_length && (
+                        <span className="text-destructive">Minimum 10 characters required</span>
                       )}
-                    </div>
-                  )}
+                    </span>
+                    <span>{formData.description.length} characters</span>
+                  </div>
+                </div>
 
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button variant="outline" onClick={() => window.history.back()} className="flex-1">
+                    Cancel
+                  </Button>
                   <Button 
-                    onClick={() => {
-                      setUploadedFile(null);
-                      setFileUrl("");
-                      setHasExtracted(false);
-                      setExtractedData({});
-                      validateField('receipt', null);
-                    }}
-                    variant="outline"
-                    className="w-full"
+                    onClick={saveTransaction}
+                    disabled={isSaving || !validateForm()}
+                    className="flex-1"
                   >
-                    Upload Different File
+                    {isSaving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Invoice'
+                    )}
                   </Button>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={() => window.history.back()}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={saveTransaction}
-              disabled={isSaving || !validateForm()}
-              className="min-w-32"
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                'Save Invoice'
-              )}
-            </Button>
-          </div>
         </div>
       </div>
     </div>
