@@ -378,7 +378,8 @@ export default function NewExpense() {
 
       if (transactionError) {
         console.error('Transaction save error:', transactionError);
-        throw new Error(`Failed to save transaction: ${transactionError.message}`);
+        console.error('Full error details:', transactionError);
+        throw new Error(`Failed to save transaction: ${transactionError.message}. Details: ${transactionError.details || 'No additional details'}`);
       }
 
       // Create line items only if they have descriptions
@@ -456,8 +457,8 @@ export default function NewExpense() {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save transaction. Please try again.';
       
       toast({
-        title: "Save Failed",
-        description: errorMessage,
+        title: "Transaction Save Failed",
+        description: `Error: ${errorMessage}`,
         variant: "destructive"
       });
     }

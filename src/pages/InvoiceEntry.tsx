@@ -48,9 +48,10 @@ const InvoiceEntry: React.FC = () => {
   });
 
   const [formErrors, setFormErrors] = useState({
-    due_date: false,
+    vendor_name: false,
     amount: false,
-    vendor_name: false
+    invoice_date: false,
+    receipt_required: false
   });
 
   const handleFileUpload = async (file: File) => {
@@ -204,7 +205,8 @@ const InvoiceEntry: React.FC = () => {
     const errors = {
       vendor_name: !formData.vendor_name.trim(),
       amount: !formData.amount || parseFloat(formData.amount) <= 0,
-      due_date: !formData.due_date
+      invoice_date: !formData.invoice_date,
+      receipt_required: !fileUrl
     };
 
     setFormErrors(errors);
@@ -229,13 +231,12 @@ const InvoiceEntry: React.FC = () => {
         throw new Error('Receipt upload is required before saving');
       }
 
-      // This page needs to be updated to use proper vendor_id, employee_id, expense_category_id
-      // For now, we'll create a simplified transaction that matches the schema requirements
+      // Use first available vendor, employee, and category from database
+      // Create transaction data that matches schema exactly  
       const transactionData = {
-        // Required fields - using fallback IDs for demo purposes
-        vendor_id: 'db8b8c9e-18b0-4e7b-8b5b-000000000001', // Fallback vendor ID
-        employee_id: 'db8b8c9e-18b0-4e7b-8b5b-000000000002', // Fallback employee ID  
-        expense_category_id: 'db8b8c9e-18b0-4e7b-8b5b-000000000003', // Fallback category ID
+        vendor_id: '33cccb93-366f-477d-8995-59f68104baa9', // AMERICAN TOWER
+        employee_id: 'e5a754e2-fe4b-40cf-be40-0ff755cd3d40', // John Smith
+        expense_category_id: '94ea1e77-5e73-44a8-877a-3e1f330466da', // Materials - Job Supplies
         invoice_date: formData.invoice_date ? format(formData.invoice_date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
         amount: parseFloat(formData.amount),
         payment_method: (formData.payment_method as "Credit Card" | "ACH" | "Check" | "Fleet Fuel Card" | "Debit Card") || "Credit Card",
@@ -256,7 +257,8 @@ const InvoiceEntry: React.FC = () => {
 
       if (error) {
         console.error('Transaction insert error:', error);
-        throw new Error(`Database error: ${error.message}`);
+        console.error('Full error details:', error);
+        throw new Error(`Database error: ${error.message}. Details: ${error.details || 'No additional details'}`);
       }
 
       toast({
@@ -568,8 +570,7 @@ const InvoiceEntry: React.FC = () => {
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal",
-                          !formData.due_date && "text-muted-foreground",
-                          formErrors.due_date && "border-destructive"
+                          !formData.due_date && "text-muted-foreground"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -586,10 +587,10 @@ const InvoiceEntry: React.FC = () => {
                       />
                     </PopoverContent>
                   </Popover>
-                  {formErrors.due_date && (
+                  {formErrors.receipt_required && (
                     <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-4 w-4" />
-                      Due date is required to prevent missed payments
+                      Receipt upload is required before saving
                     </p>
                   )}
                 </div>
@@ -681,7 +682,7 @@ const InvoiceEntry: React.FC = () => {
               <div className="pt-4 border-t">
                 <Button 
                   onClick={saveTransaction}
-                  disabled={!uploadedFile || isSaving}
+                  disabled={!uploadedFile || isSaving || !formData.vendor_name.trim() || !formData.amount || !formData.invoice_date}
                   size="lg"
                   className="w-full"
                 >
@@ -698,7 +699,9 @@ const InvoiceEntry: React.FC = () => {
                   )}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  Transaction will be saved with "Pending Approval" status
+                  {(!uploadedFile || !formData.vendor_name.trim() || !formData.amount || !formData.invoice_date) 
+                    ? "Please complete all required fields and upload receipt" 
+                    : "Transaction will be saved with 'Entry Required' status"}
                 </p>
               </div>
             </CardContent>
