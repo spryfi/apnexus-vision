@@ -210,11 +210,39 @@ const InvoiceEntry: React.FC = () => {
       invoice_date: !formData.invoice_date,
       receipt_required: !fileUrl,
       expense_category: !formData.expense_category.trim(),
-      description_length: !formData.description || formData.description.trim().length < 20
+      description_length: !formData.description || formData.description.trim().length < 10
     };
 
     setFormErrors(errors);
     return !Object.values(errors).some(Boolean);
+  };
+
+  // Real-time validation when fields change
+  const validateField = (fieldName: string, value: any) => {
+    const newErrors = { ...formErrors };
+    
+    switch (fieldName) {
+      case 'vendor_name':
+        newErrors.vendor_name = !value || !value.trim();
+        break;
+      case 'amount':
+        newErrors.amount = !value || parseFloat(value) <= 0;
+        break;
+      case 'invoice_date':
+        newErrors.invoice_date = !value;
+        break;
+      case 'expense_category':
+        newErrors.expense_category = !value || !value.trim();
+        break;
+      case 'description':
+        newErrors.description_length = !value || value.trim().length < 10;
+        break;
+      case 'receipt':
+        newErrors.receipt_required = !fileUrl;
+        break;
+    }
+    
+    setFormErrors(newErrors);
   };
 
   const saveTransaction = async () => {
@@ -325,7 +353,7 @@ const InvoiceEntry: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           
           {/* Left Panel - Document Upload */}
-          <Card className="h-fit">
+          <Card className={`h-fit ${formErrors.receipt_required ? 'border-destructive' : ''}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="h-5 w-5" />
@@ -333,17 +361,27 @@ const InvoiceEntry: React.FC = () => {
               </CardTitle>
               <CardDescription>
                 Drag and drop your invoice or receipt, or click to browse
+                {formErrors.receipt_required && (
+                  <span className="text-destructive block mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    Receipt upload is required before saving
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {!uploadedFile ? (
                 <div
-                  className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-12 text-center hover:border-muted-foreground/50 transition-colors cursor-pointer"
+                  className={`border-2 border-dashed rounded-lg p-12 text-center hover:border-muted-foreground/50 transition-colors cursor-pointer ${
+                    formErrors.receipt_required 
+                      ? 'border-destructive/50 bg-destructive/5' 
+                      : 'border-muted-foreground/25'
+                  }`}
                   onDrop={handleDrop}
                   onDragOver={(e) => e.preventDefault()}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <Upload className={`h-12 w-12 mx-auto mb-4 ${formErrors.receipt_required ? 'text-destructive' : 'text-muted-foreground'}`} />
                   <p className="text-lg font-medium text-foreground mb-2">
                     Drop your invoice here
                   </p>
@@ -483,7 +521,10 @@ const InvoiceEntry: React.FC = () => {
                   <Input
                     id="vendor_name"
                     value={formData.vendor_name}
-                    onChange={(e) => handleInputChange('vendor_name', e.target.value)}
+                    onChange={(e) => {
+                      handleInputChange('vendor_name', e.target.value);
+                      validateField('vendor_name', e.target.value);
+                    }}
                     placeholder="Enter vendor name"
                     className={formErrors.vendor_name ? "border-destructive" : ""}
                   />
@@ -510,14 +551,17 @@ const InvoiceEntry: React.FC = () => {
                     type="number"
                     step="0.01"
                     value={formData.amount}
-                    onChange={(e) => handleInputChange('amount', e.target.value)}
+                    onChange={(e) => {
+                      handleInputChange('amount', e.target.value);
+                      validateField('amount', e.target.value);
+                    }}
                     placeholder="0.00"
                     className={formErrors.amount ? "border-destructive" : ""}
                   />
                   {formErrors.amount && (
                     <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-4 w-4" />
-                      Valid amount is required
+                      Amount must be greater than $0
                     </p>
                   )}
                 </div>
@@ -538,7 +582,8 @@ const InvoiceEntry: React.FC = () => {
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal",
-                          !formData.invoice_date && "text-muted-foreground"
+                          !formData.invoice_date && "text-muted-foreground",
+                          formErrors.invoice_date && "border-destructive"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -549,12 +594,21 @@ const InvoiceEntry: React.FC = () => {
                       <Calendar
                         mode="single"
                         selected={formData.invoice_date}
-                        onSelect={(date) => handleInputChange('invoice_date', date)}
+                        onSelect={(date) => {
+                          handleInputChange('invoice_date', date);
+                          validateField('invoice_date', date);
+                        }}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
+                  {formErrors.invoice_date && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      Invoice date is required
+                    </p>
+                  )}
                 </div>
 
                 {/* Due Date */}
@@ -630,10 +684,25 @@ const InvoiceEntry: React.FC = () => {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Enter invoice description"
+                    onChange={(e) => {
+                      handleInputChange('description', e.target.value);
+                      validateField('description', e.target.value);
+                    }}
+                    placeholder="Enter purchase description (minimum 10 characters)"
                     rows={3}
+                    className={formErrors.description_length ? "border-destructive" : ""}
                   />
+                  <div className="flex justify-between items-center">
+                    <span className={`text-xs ${formData.description && formData.description.length < 10 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      Characters: {formData.description?.length || 0}/10 minimum
+                    </span>
+                  </div>
+                  {formErrors.description_length && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-4 w-4" />
+                      Description must be at least 10 characters
+                    </p>
+                  )}
                 </div>
 
                 {/* Additional Fields */}
@@ -664,9 +733,15 @@ const InvoiceEntry: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="expense_category">Expense Category</Label>
-                    <Select onValueChange={(value) => handleInputChange('expense_category', value)}>
-                      <SelectTrigger>
+                    <Label htmlFor="expense_category">Expense Category *</Label>
+                    <Select 
+                      value={formData.expense_category}
+                      onValueChange={(value) => {
+                        handleInputChange('expense_category', value);
+                        validateField('expense_category', value);
+                      }}
+                    >
+                      <SelectTrigger className={formErrors.expense_category ? "border-destructive" : ""}>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -678,6 +753,12 @@ const InvoiceEntry: React.FC = () => {
                         <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                    {formErrors.expense_category && (
+                      <p className="text-sm text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" />
+                        Please select an expense category
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -686,7 +767,7 @@ const InvoiceEntry: React.FC = () => {
               <div className="pt-4 border-t">
                 <Button 
                   onClick={saveTransaction}
-                  disabled={!uploadedFile || isSaving || !formData.vendor_name.trim() || !formData.amount || parseFloat(formData.amount) <= 0 || !formData.invoice_date || !formData.expense_category.trim() || !formData.description || formData.description.trim().length < 20}
+                  disabled={!uploadedFile || isSaving || !formData.vendor_name.trim() || !formData.amount || parseFloat(formData.amount) <= 0 || !formData.invoice_date || !formData.expense_category.trim() || !formData.description || formData.description.trim().length < 10}
                   size="lg"
                   className="w-full"
                 >
@@ -703,8 +784,8 @@ const InvoiceEntry: React.FC = () => {
                   )}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  {(!uploadedFile || !formData.vendor_name.trim() || !formData.amount || parseFloat(formData.amount) <= 0 || !formData.invoice_date || !formData.expense_category.trim() || !formData.description || formData.description.trim().length < 20) 
-                    ? "Please complete all required fields (20+ char description, category, amount > 0, receipt)" 
+                  {(!uploadedFile || !formData.vendor_name.trim() || !formData.amount || parseFloat(formData.amount) <= 0 || !formData.invoice_date || !formData.expense_category.trim() || !formData.description || formData.description.trim().length < 10) 
+                    ? "Please complete all required fields (10+ char description, category, amount > 0, receipt)" 
                     : "Transaction will be saved with 'Entry Required' status"}
                 </p>
               </div>
