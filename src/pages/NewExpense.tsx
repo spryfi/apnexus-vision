@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Sparkles, AlertTriangle, CheckCircle, Plus, Trash2, FileText, ArrowRight } from 'lucide-react';
+import { Upload, Sparkles, AlertTriangle, CheckCircle, Plus, Trash2, FileText, ArrowRight, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Tables } from '@/integrations/supabase/types';
@@ -48,6 +48,17 @@ export default function NewExpense() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState({
+    vendor_id: false,
+    employee_id: false,
+    expense_category_id: false,
+    invoice_date: false,
+    amount: false,
+    payment_method: false,
+    document_required: false
+  });
+
   // Form state
   const [formData, setFormData] = useState({
     vendor_id: '',
@@ -276,69 +287,59 @@ export default function NewExpense() {
     }));
   };
 
+  // Real-time validation function
+  const validateField = (fieldName: string, value: any) => {
+    const newErrors = { ...formErrors };
+    
+    switch (fieldName) {
+      case 'vendor_id':
+        newErrors.vendor_id = !value;
+        break;
+      case 'employee_id':
+        newErrors.employee_id = !value;
+        break;
+      case 'expense_category_id':
+        newErrors.expense_category_id = !value;
+        break;
+      case 'invoice_date':
+        newErrors.invoice_date = !value;
+        break;
+      case 'amount':
+        newErrors.amount = !value || parseFloat(value) <= 0;
+        break;
+      case 'payment_method':
+        newErrors.payment_method = !value;
+        break;
+      case 'document':
+        newErrors.document_required = !documentUrl;
+        break;
+    }
+    
+    setFormErrors(newErrors);
+  };
+
   const handleSaveTransaction = async () => {
-    // Validation checks
-    if (!documentUrl) {
-      toast({
-        title: "Error",
-        description: "Please upload a receipt first.",
-        variant: "destructive"
-      });
-      return;
-    }
+    // Validation checks with visual feedback
+    const validationChecks = [
+      { field: 'document', condition: !documentUrl, message: "Please upload a receipt first." },
+      { field: 'vendor_id', condition: !formData.vendor_id, message: "Please select a vendor." },
+      { field: 'employee_id', condition: !formData.employee_id, message: "Please select an employee." },
+      { field: 'expense_category_id', condition: !formData.expense_category_id, message: "Please select an expense category." },
+      { field: 'invoice_date', condition: !formData.invoice_date, message: "Please enter the transaction date." },
+      { field: 'amount', condition: !formData.amount || parseFloat(formData.amount) <= 0, message: "Please enter a valid total amount." },
+      { field: 'payment_method', condition: !formData.payment_method, message: "Please select a payment method." }
+    ];
 
-    if (!formData.vendor_id) {
-      toast({
-        title: "Error",
-        description: "Please select a vendor.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData.employee_id) {
-      toast({
-        title: "Error",
-        description: "Please select an employee.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData.expense_category_id) {
-      toast({
-        title: "Error",
-        description: "Please select an expense category.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData.invoice_date) {
-      toast({
-        title: "Error",
-        description: "Please enter the transaction date.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid total amount.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData.payment_method) {
-      toast({
-        title: "Error",
-        description: "Please select a payment method.",
-        variant: "destructive"
-      });
-      return;
+    for (const check of validationChecks) {
+      if (check.condition) {
+        validateField(check.field, null);
+        toast({
+          title: "Error",
+          description: check.message,
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     if (totalsMatch === false) {
@@ -606,10 +607,20 @@ export default function NewExpense() {
             </CardHeader>
             <CardContent className="h-full">
               {!uploadedFile ? (
-                <div className="h-full border-2 border-dashed border-muted-foreground/25 rounded-lg flex flex-col items-center justify-center p-8">
-                  <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+                <div className={`h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-8 ${
+                  formErrors.document_required 
+                    ? 'border-destructive/50 bg-destructive/5' 
+                    : 'border-muted-foreground/25'
+                }`}>
+                  <Upload className={`h-12 w-12 mb-4 ${formErrors.document_required ? 'text-destructive' : 'text-muted-foreground'}`} />
                   <h3 className="text-lg font-medium mb-2">Upload your invoice or receipt to get started</h3>
                   <p className="text-muted-foreground mb-4">Supports PDF and image files</p>
+                  {formErrors.document_required && (
+                    <p className="text-sm text-destructive flex items-center gap-1 mb-4">
+                      <AlertTriangle className="h-4 w-4" />
+                      Receipt upload is required
+                    </p>
+                  )}
                   <Input
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
@@ -657,8 +668,14 @@ export default function NewExpense() {
               {/* Basic Fields */}
               <div className="space-y-2">
                 <Label htmlFor="vendor">Vendor</Label>
-                <Select value={formData.vendor_id} onValueChange={(value) => setFormData(prev => ({ ...prev, vendor_id: value }))}>
-                  <SelectTrigger>
+                <Select 
+                  value={formData.vendor_id} 
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, vendor_id: value }));
+                    validateField('vendor_id', value);
+                  }}
+                >
+                  <SelectTrigger className={formErrors.vendor_id ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select vendor" />
                   </SelectTrigger>
                   <SelectContent>
@@ -669,19 +686,35 @@ export default function NewExpense() {
                     ))}
                   </SelectContent>
                 </Select>
+                {formErrors.vendor_id && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Please select a vendor
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">Date *</Label>
                 <Input
                   type="date"
                   value={formData.invoice_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, invoice_date: e.target.value }))}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, invoice_date: e.target.value }));
+                    validateField('invoice_date', e.target.value);
+                  }}
+                  className={formErrors.invoice_date ? "border-destructive" : ""}
                 />
+                {formErrors.invoice_date && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Date is required
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amount">Total Amount</Label>
+                <Label htmlFor="amount">Total Amount *</Label>
                 <Input
                   type="text"
                   inputMode="decimal"
@@ -692,15 +725,29 @@ export default function NewExpense() {
                     // Allow only numbers and a single decimal point
                     if (/^[0-9]*\.?[0-9]*$/.test(value)) {
                       setFormData(prev => ({ ...prev, amount: value }));
+                      validateField('amount', value);
                     }
                   }}
+                  className={formErrors.amount ? "border-destructive" : ""}
                 />
+                {formErrors.amount && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Amount must be greater than $0
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="employee">Employee</Label>
-                <Select value={formData.employee_id} onValueChange={(value) => setFormData(prev => ({ ...prev, employee_id: value }))}>
-                  <SelectTrigger>
+                <Label htmlFor="employee">Employee *</Label>
+                <Select 
+                  value={formData.employee_id} 
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, employee_id: value }));
+                    validateField('employee_id', value);
+                  }}
+                >
+                  <SelectTrigger className={formErrors.employee_id ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select employee" />
                   </SelectTrigger>
                   <SelectContent>
@@ -711,12 +758,24 @@ export default function NewExpense() {
                     ))}
                   </SelectContent>
                 </Select>
+                {formErrors.employee_id && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Please select an employee
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Expense Category</Label>
-                <Select value={formData.expense_category_id} onValueChange={(value) => setFormData(prev => ({ ...prev, expense_category_id: value }))}>
-                  <SelectTrigger>
+                <Label htmlFor="category">Expense Category *</Label>
+                <Select 
+                  value={formData.expense_category_id} 
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, expense_category_id: value }));
+                    validateField('expense_category_id', value);
+                  }}
+                >
+                  <SelectTrigger className={formErrors.expense_category_id ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -727,12 +786,24 @@ export default function NewExpense() {
                     ))}
                   </SelectContent>
                 </Select>
+                {formErrors.expense_category_id && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Please select an expense category
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="payment-method">Payment Method</Label>
-                <Select value={formData.payment_method} onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}>
-                  <SelectTrigger>
+                <Label htmlFor="payment-method">Payment Method *</Label>
+                <Select 
+                  value={formData.payment_method} 
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, payment_method: value }));
+                    validateField('payment_method', value);
+                  }}
+                >
+                  <SelectTrigger className={formErrors.payment_method ? "border-destructive" : ""}>
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
@@ -742,6 +813,12 @@ export default function NewExpense() {
                     <SelectItem value="ACH">ACH</SelectItem>
                   </SelectContent>
                 </Select>
+                {formErrors.payment_method && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Please select a payment method
+                  </p>
+                )}
               </div>
 
               {/* Line Items */}
