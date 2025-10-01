@@ -48,7 +48,7 @@ export function PaymentMethodsManager() {
   const fetchData = async () => {
     try {
       const [methodsResponse, employeesResponse] = await Promise.all([
-        supabase.from('payment_methods').select('*').order('nickname'),
+        supabase.from('payment_methods').select('*').order('method_name'),
         supabase.from('employees_enhanced').select('id, full_name').order('full_name')
       ]);
 
