@@ -167,9 +167,6 @@ const Reminders = () => {
                               <span className="text-red-600 font-medium">
                                 {getRelativeTime(reminder.reminder_date)}
                               </span>
-                              <Badge variant={reminder.priority === 'high' ? 'destructive' : 'secondary'}>
-                                {reminder.priority}
-                              </Badge>
                               <Badge variant="outline">{reminder.reminder_type}</Badge>
                             </div>
                           </div>
@@ -204,9 +201,6 @@ const Reminders = () => {
                             )}
                             <div className="flex items-center gap-4 mt-2 text-sm">
                               <span className="text-orange-600 font-medium">Today</span>
-                              <Badge variant={reminder.priority === 'high' ? 'destructive' : 'secondary'}>
-                                {reminder.priority}
-                              </Badge>
                               <Badge variant="outline">{reminder.reminder_type}</Badge>
                             </div>
                           </div>
@@ -243,9 +237,6 @@ const Reminders = () => {
                               <span className="text-yellow-600 font-medium">
                                 {getRelativeTime(reminder.reminder_date)}
                               </span>
-                              <Badge variant={reminder.priority === 'high' ? 'destructive' : 'secondary'}>
-                                {reminder.priority}
-                              </Badge>
                               <Badge variant="outline">{reminder.reminder_type}</Badge>
                             </div>
                           </div>
@@ -282,9 +273,6 @@ const Reminders = () => {
                               <span className="text-blue-600 font-medium">
                                 {format(new Date(reminder.reminder_date), "MMM d, yyyy")}
                               </span>
-                              <Badge variant={reminder.priority === 'high' ? 'destructive' : 'secondary'}>
-                                {reminder.priority}
-                              </Badge>
                               <Badge variant="outline">{reminder.reminder_type}</Badge>
                             </div>
                           </div>

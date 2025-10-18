@@ -2399,6 +2399,81 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_enabled: boolean | null
+          email_frequency: string | null
+          email_time: string | null
+          id: string
+          push_enabled: boolean | null
+          reminder_types: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          email_frequency?: string | null
+          email_time?: string | null
+          id?: string
+          push_enabled?: boolean | null
+          reminder_types?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          email_frequency?: string | null
+          email_time?: string | null
+          id?: string
+          push_enabled?: boolean | null
+          reminder_types?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string | null
+          notification_type: string
+          read_at: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          notification_type: string
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          notification_type?: string
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ocr_accuracy_metrics: {
         Row: {
           amount_accuracy: number | null
@@ -3512,6 +3587,48 @@ export type Database = {
           id?: string
           referred_lead_id?: string
           referrer_id?: string
+        }
+        Relationships: []
+      }
+      reminder_automation_rules: {
+        Row: {
+          assign_to_role: string | null
+          created_at: string | null
+          days_offset: number
+          description_template: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          priority: string
+          title_template: string
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          assign_to_role?: string | null
+          created_at?: string | null
+          days_offset: number
+          description_template?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          priority?: string
+          title_template: string
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          assign_to_role?: string | null
+          created_at?: string | null
+          days_offset?: number
+          description_template?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          priority?: string
+          title_template?: string
+          trigger_type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
