@@ -4459,6 +4459,50 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_reminders: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          reference_id: string | null
+          reminder_date: string
+          reminder_type: string
+          sent_at: string | null
+          status: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          reference_id?: string | null
+          reminder_date: string
+          reminder_type: string
+          sent_at?: string | null
+          status?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          reference_id?: string | null
+          reminder_date?: string
+          reminder_type?: string
+          sent_at?: string | null
+          status?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_reminders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           asset_id: string
