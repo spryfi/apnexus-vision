@@ -816,6 +816,20 @@ export type Database = {
             foreignKeyName: "credit_card_transactions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_fuel_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "credit_card_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_spending_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "credit_card_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees_enhanced"
             referencedColumns: ["id"]
           },
@@ -1258,49 +1272,76 @@ export type Database = {
       }
       employees_enhanced: {
         Row: {
+          address: string | null
           created_at: string
+          department: string | null
           email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          employment_status: string | null
           full_name: string
           hire_date: string | null
           id: string
           job_title: string | null
           pay_rate: number
           pay_type: string | null
+          personal_days_allocated: number | null
           phone: string | null
+          photo_url: string | null
           pto_sick_hours_accrued_annually: number | null
           pto_vacation_hours_accrued_annually: number | null
+          sick_days_allocated: number | null
           status: string | null
           updated_at: string
+          vacation_days_allocated: number | null
         }
         Insert: {
+          address?: string | null
           created_at?: string
+          department?: string | null
           email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employment_status?: string | null
           full_name: string
           hire_date?: string | null
           id?: string
           job_title?: string | null
           pay_rate: number
           pay_type?: string | null
+          personal_days_allocated?: number | null
           phone?: string | null
+          photo_url?: string | null
           pto_sick_hours_accrued_annually?: number | null
           pto_vacation_hours_accrued_annually?: number | null
+          sick_days_allocated?: number | null
           status?: string | null
           updated_at?: string
+          vacation_days_allocated?: number | null
         }
         Update: {
+          address?: string | null
           created_at?: string
+          department?: string | null
           email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employment_status?: string | null
           full_name?: string
           hire_date?: string | null
           id?: string
           job_title?: string | null
           pay_rate?: number
           pay_type?: string | null
+          personal_days_allocated?: number | null
           phone?: string | null
+          photo_url?: string | null
           pto_sick_hours_accrued_annually?: number | null
           pto_vacation_hours_accrued_annually?: number | null
+          sick_days_allocated?: number | null
           status?: string | null
           updated_at?: string
+          vacation_days_allocated?: number | null
         }
         Relationships: []
       }
@@ -3844,6 +3885,20 @@ export type Database = {
             foreignKeyName: "stipends_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_fuel_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "stipends_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_spending_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "stipends_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees_enhanced"
             referencedColumns: ["id"]
           },
@@ -4048,6 +4103,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "time_off_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_fuel_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "time_off_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_spending_summary"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "time_off_records_employee_id_fkey"
             columns: ["employee_id"]
@@ -4839,6 +4908,28 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      employee_fuel_summary: {
+        Row: {
+          avg_price_per_gallon: number | null
+          employee_id: string | null
+          fillups_this_month: number | null
+          fuel_spending_this_month: number | null
+          full_name: string | null
+          gallons_this_month: number | null
+        }
+        Relationships: []
+      }
+      employee_spending_summary: {
+        Row: {
+          employee_id: string | null
+          full_name: string | null
+          spending_last_month: number | null
+          spending_this_month: number | null
+          spending_this_year: number | null
+          transaction_count_this_month: number | null
+        }
+        Relationships: []
       }
       lead_qualification_view: {
         Row: {
