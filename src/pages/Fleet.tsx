@@ -4,11 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Truck, AlertTriangle, Calendar, Shield, Eye, Edit } from "lucide-react";
+import { Plus, Truck, AlertTriangle, Calendar, Shield, Eye, Edit, Fuel, TrendingUp, TrendingDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import AddVehicleDialog from "@/components/AddVehicleDialog";
 import { toast } from "@/hooks/use-toast";
+import { useVehicleFuelData } from "@/hooks/useVehicleFuelData";
+import { MetricCard } from "@/components/dashboard/MetricCard";
 
 interface Vehicle {
   id: string;
@@ -31,6 +33,8 @@ const Fleet: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'fuel'>('name');
+  const { fuelData, loading: fuelLoading } = useVehicleFuelData();
   const navigate = useNavigate();
 
   useEffect(() => {

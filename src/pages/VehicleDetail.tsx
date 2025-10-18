@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, ArrowLeft, Plus, FileText, Fuel, Calendar, Settings, Eye } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Plus, FileText, Fuel, Calendar, Settings, Eye, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import AddMaintenanceDialog from "@/components/AddMaintenanceDialog";
 import { toast } from "@/hooks/use-toast";
+import { VehicleFuelStats } from "@/components/fleet/VehicleFuelStats";
+import { VehicleFuelTrendChart } from "@/components/fleet/VehicleFuelTrendChart";
+import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
 
 interface Vehicle {
   id: string;
@@ -42,12 +45,19 @@ interface MaintenanceRecord {
 interface FuelTransaction {
   id: string;
   transaction_date: string;
-  employee_name: string;
-  gallons: number;
-  cost_per_gallon: number;
-  total_cost: number;
-  odometer: number;
+  driver_first_name?: string;
+  driver_last_name?: string;
+  gallons?: number;
+  price_per_gallon?: number;
+  total_fuel_cost?: number;
+  current_odometer?: number;
+  adjusted_odometer?: number;
+  distance_driven?: number;
+  fuel_economy?: number;
   merchant_name?: string;
+  merchant_city?: string;
+  merchant_state?: string;
+  receipt_url?: string;
 }
 
 const VehicleDetail: React.FC = () => {
@@ -58,6 +68,8 @@ const VehicleDetail: React.FC = () => {
   const [fuelHistory, setFuelHistory] = useState<FuelTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddMaintenanceDialog, setShowAddMaintenanceDialog] = useState(false);
+  const [showReceiptViewer, setShowReceiptViewer] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<{ url: string; fileName: string } | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -331,49 +343,137 @@ const VehicleDetail: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="fuel">
-          <Card>
-            <CardHeader>
-              <CardTitle>Fuel History</CardTitle>
-              <CardDescription>Complete fuel transaction history for this vehicle</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {fuelHistory.length === 0 ? (
+        <TabsContent value="fuel" className="space-y-4">
+          {fuelHistory.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
                 <div className="text-center py-8">
                   <Fuel className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-muted-foreground mb-2">No fuel records</h3>
-                  <p className="text-sm text-muted-foreground">Fuel transactions will appear here when uploaded</p>
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">No fuel records for this vehicle yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Fuel transactions will appear here when uploaded</p>
+                  <Button onClick={() => navigate('/fuel')}>
+                    Go to Fuel Tracking
+                  </Button>
                 </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Gallons</TableHead>
-                      <TableHead>Cost/Gallon</TableHead>
-                      <TableHead>Total Cost</TableHead>
-                      <TableHead>Odometer</TableHead>
-                      <TableHead>Merchant</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fuelHistory.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>{new Date(transaction.transaction_date).toLocaleDateString()}</TableCell>
-                        <TableCell>{transaction.employee_name}</TableCell>
-                        <TableCell>{transaction.gallons.toFixed(2)}</TableCell>
-                        <TableCell>{formatCurrency(transaction.cost_per_gallon)}</TableCell>
-                        <TableCell>{formatCurrency(transaction.total_cost)}</TableCell>
-                        <TableCell>{transaction.odometer.toLocaleString()}</TableCell>
-                        <TableCell>{transaction.merchant_name || 'Not specified'}</TableCell>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <VehicleFuelStats stats={{
+                totalSpentAllTime: fuelHistory.reduce((sum, f) => sum + (f.total_fuel_cost || 0), 0),
+                totalSpentThisMonth: fuelHistory
+                  .filter(f => {
+                    const transDate = new Date(f.transaction_date);
+                    const now = new Date();
+                    return transDate.getMonth() === now.getMonth() && transDate.getFullYear() === now.getFullYear();
+                  })
+                  .reduce((sum, f) => sum + (f.total_fuel_cost || 0), 0),
+                totalGallons: fuelHistory.reduce((sum, f) => sum + (f.gallons || 0), 0),
+                averageMPG: fuelHistory.filter(f => f.fuel_economy && f.fuel_economy > 0).length > 0
+                  ? fuelHistory.filter(f => f.fuel_economy && f.fuel_economy > 0).reduce((sum, f) => sum + (f.fuel_economy || 0), 0) / fuelHistory.filter(f => f.fuel_economy && f.fuel_economy > 0).length
+                  : 0,
+                costPerMile: fuelHistory.filter(f => f.distance_driven && f.distance_driven > 0).length > 0
+                  ? fuelHistory.reduce((sum, f) => sum + (f.total_fuel_cost || 0), 0) / fuelHistory.reduce((sum, f) => sum + (f.distance_driven || 0), 0)
+                  : 0,
+                lastFillupDays: fuelHistory.length > 0 
+                  ? Math.floor((new Date().getTime() - new Date(fuelHistory[0].transaction_date).getTime()) / (1000 * 60 * 60 * 24))
+                  : -1,
+                fillupCount: fuelHistory.length,
+              }} />
+
+              <VehicleFuelTrendChart data={(() => {
+                const last6Months = Array.from({ length: 6 }, (_, i) => {
+                  const d = new Date();
+                  d.setMonth(d.getMonth() - i);
+                  return { month: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), monthKey: `${d.getFullYear()}-${d.getMonth()}` };
+                }).reverse();
+
+                return last6Months.map(({ month, monthKey }) => {
+                  const monthTransactions = fuelHistory.filter(f => {
+                    const transDate = new Date(f.transaction_date);
+                    return `${transDate.getFullYear()}-${transDate.getMonth()}` === monthKey;
+                  });
+                  
+                  return {
+                    month,
+                    amount: monthTransactions.reduce((sum, f) => sum + (f.total_fuel_cost || 0), 0),
+                    gallons: monthTransactions.reduce((sum, f) => sum + (f.gallons || 0), 0),
+                  };
+                });
+              })()} />
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Fuel Transaction History</CardTitle>
+                    <CardDescription>Complete record of all fill-ups for this vehicle</CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate(`/fuel?vehicle=${vehicle?.asset_id}`)}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View All Fuel Transactions
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Driver</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Gallons</TableHead>
+                        <TableHead>Price/Gal</TableHead>
+                        <TableHead>Total Cost</TableHead>
+                        <TableHead>Odometer</TableHead>
+                        <TableHead>MPG</TableHead>
+                        <TableHead>Receipt</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {fuelHistory.map((fuel) => (
+                        <TableRow key={fuel.id}>
+                          <TableCell>{new Date(fuel.transaction_date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {fuel.driver_first_name || fuel.driver_last_name
+                              ? `${fuel.driver_first_name || ''} ${fuel.driver_last_name || ''}`.trim()
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {fuel.merchant_name
+                              ? `${fuel.merchant_name}${fuel.merchant_city ? `, ${fuel.merchant_city}` : ''}${fuel.merchant_state ? `, ${fuel.merchant_state}` : ''}`
+                              : '-'}
+                          </TableCell>
+                          <TableCell>{fuel.gallons ? fuel.gallons.toFixed(2) : '-'}</TableCell>
+                          <TableCell>${fuel.price_per_gallon ? fuel.price_per_gallon.toFixed(2) : '0.00'}</TableCell>
+                          <TableCell>${fuel.total_fuel_cost ? fuel.total_fuel_cost.toFixed(2) : '0.00'}</TableCell>
+                          <TableCell>{(fuel.adjusted_odometer || fuel.current_odometer || 0).toLocaleString()}</TableCell>
+                          <TableCell>{fuel.fuel_economy ? fuel.fuel_economy.toFixed(1) : '-'}</TableCell>
+                          <TableCell>
+                            {fuel.receipt_url ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedReceipt({ url: fuel.receipt_url!, fileName: `Receipt_${fuel.id}` });
+                                  setShowReceiptViewer(true);
+                                }}
+                              >
+                                <FileText className="h-4 w-4 text-blue-600" />
+                              </Button>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="documents">
@@ -451,6 +551,16 @@ const VehicleDetail: React.FC = () => {
         vehicleId={vehicle.id}
         onMaintenanceAdded={fetchVehicleData}
       />
+
+      {/* Receipt Viewer Modal */}
+      {selectedReceipt && (
+        <ReceiptViewerModal
+          open={showReceiptViewer}
+          onOpenChange={setShowReceiptViewer}
+          receiptUrl={selectedReceipt.url}
+          receiptFileName={selectedReceipt.fileName}
+        />
+      )}
     </div>
   );
 };
