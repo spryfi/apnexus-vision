@@ -6,7 +6,11 @@ import { Upload, FileText, AlertTriangle, DollarSign, Droplet, TrendingUp } from
 import { useToast } from "@/hooks/use-toast";
 import { FuelUploadWizard } from "@/components/FuelUploadWizard";
 import { FuelTransactionsTable } from "@/components/FuelTransactionsTable";
+import { FuelAnalytics } from "@/components/fuel/FuelAnalytics";
+import { FuelByVehicle } from "@/components/fuel/FuelByVehicle";
+import { FuelByDriver } from "@/components/fuel/FuelByDriver";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
@@ -48,6 +52,7 @@ export default function Fuel() {
   const [showUploadWizard, setShowUploadWizard] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FuelTransaction | null>(null);
   const [reviewingTransaction, setReviewingTransaction] = useState<FuelTransaction | null>(null);
+  const [activeTab, setActiveTab] = useState('transactions');
   const { toast } = useToast();
 
   // Metrics from current month transactions
@@ -354,90 +359,114 @@ export default function Fuel() {
         </Card>
       </div>
 
-      {/* Statement History Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Statement History</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Statement Period</label>
-            <Select value={selectedStatementId} onValueChange={setSelectedStatementId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a statement" />
-              </SelectTrigger>
-              <SelectContent>
-                {statements.map((statement) => (
-                  <SelectItem key={statement.id} value={statement.id}>
-                    Statement Ending: {formatDate(statement.statement_end_date)} 
-                    ({statement.total_transactions} transactions, {formatCurrency(statement.total_amount)})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Main Content with Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="by-vehicle">By Vehicle</TabsTrigger>
+          <TabsTrigger value="by-driver">By Driver</TabsTrigger>
+        </TabsList>
 
-          {/* Statement Summary Card */}
-          {selectedStatement && (
-            <Card className="bg-muted/50">
-              <CardContent className="pt-6">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Statement Period</p>
-                    <p className="text-lg font-semibold">
-                      {formatDate(selectedStatement.statement_start_date)} - {formatDate(selectedStatement.statement_end_date)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
-                    <p className="text-lg font-semibold">{selectedStatement.total_transactions}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
-                    <p className="text-lg font-semibold">{formatCurrency(selectedStatement.total_amount)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Gallons</p>
-                    <p className="text-lg font-semibold">{formatNumber(selectedStatement.total_gallons)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Upload Date</p>
-                    <p className="text-lg font-semibold">{formatDate(selectedStatement.upload_date)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Status</p>
-                    <div className="mt-1">{getStatusBadge(selectedStatement.status)}</div>
-                  </div>
-                </div>
+        <TabsContent value="transactions" className="space-y-6">
+          {/* Statement History Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Statement History</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Statement Period</label>
+                <Select value={selectedStatementId} onValueChange={setSelectedStatementId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a statement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statements.map((statement) => (
+                      <SelectItem key={statement.id} value={statement.id}>
+                        Statement Ending: {formatDate(statement.statement_end_date)} 
+                        ({statement.total_transactions} transactions, {formatCurrency(statement.total_amount)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {selectedStatement.ai_processing_notes && (
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="text-sm font-medium text-muted-foreground mb-2">AI Processing Notes</p>
-                    <p className="text-sm">{selectedStatement.ai_processing_notes}</p>
-                  </div>
-                )}
+              {/* Statement Summary Card */}
+              {selectedStatement && (
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Statement Period</p>
+                        <p className="text-lg font-semibold">
+                          {formatDate(selectedStatement.statement_start_date)} - {formatDate(selectedStatement.statement_end_date)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
+                        <p className="text-lg font-semibold">{selectedStatement.total_transactions}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
+                        <p className="text-lg font-semibold">{formatCurrency(selectedStatement.total_amount)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Gallons</p>
+                        <p className="text-lg font-semibold">{formatNumber(selectedStatement.total_gallons)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Upload Date</p>
+                        <p className="text-lg font-semibold">{formatDate(selectedStatement.upload_date)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Status</p>
+                        <div className="mt-1">{getStatusBadge(selectedStatement.status)}</div>
+                      </div>
+                    </div>
+
+                    {selectedStatement.ai_processing_notes && (
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm font-medium text-muted-foreground mb-2">AI Processing Notes</p>
+                        <p className="text-sm">{selectedStatement.ai_processing_notes}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Transactions Table */}
+          {selectedStatementId && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Statement Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FuelTransactionsTable
+                  transactions={transactions}
+                  loading={loading}
+                  onEditTransaction={setEditingTransaction}
+                  onReviewTransaction={setReviewingTransaction}
+                />
               </CardContent>
             </Card>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Transactions Table */}
-      {selectedStatementId && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Statement Transactions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FuelTransactionsTable
-              transactions={transactions}
-              loading={loading}
-              onEditTransaction={setEditingTransaction}
-              onReviewTransaction={setReviewingTransaction}
-            />
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="analytics">
+          <FuelAnalytics transactions={transactions} />
+        </TabsContent>
+
+        <TabsContent value="by-vehicle">
+          <FuelByVehicle transactions={transactions} />
+        </TabsContent>
+
+        <TabsContent value="by-driver">
+          <FuelByDriver transactions={transactions} />
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Transaction Dialog */}
       <Dialog open={!!editingTransaction} onOpenChange={() => setEditingTransaction(null)}>
