@@ -1,131 +1,285 @@
-import { ReactNode, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { ReactNode, useEffect, useState } from "react";
+import { Navigate, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ViolationBanner from "./ViolationBanner";
 import { Button } from "@/components/ui/button";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Shield, Settings, Receipt, Users, LogOut, Fuel, DollarSign, UserCheck, Menu, Truck } from "lucide-react";
-import { NavLink } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  DollarSign, 
+  Truck, 
+  Users, 
+  Settings as SettingsIcon,
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  Menu,
+  Building2,
+  Loader2
+} from "lucide-react";
+import { Breadcrumb } from "@/components/Breadcrumb";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import TaskStatusCards from "@/components/TaskStatusCards";
-
-const navigation = [
-  { name: "➕ Enter an Invoice", href: "/invoice-entry", icon: Receipt, primary: true },
-  { name: "AP-Fortress", href: "/", icon: Shield },
-  { name: "Admin Hub", href: "/admin", icon: Settings },
-  { name: "Legacy Transactions", href: "/transactions", icon: Receipt },
-  { name: "Vendors & Categories", href: "/vendors", icon: Users },
-  { name: "Fuel Tracking", href: "/fuel", icon: Fuel },
-  { name: "Fleet", href: "/fleet", icon: Truck },
-  { name: "Staff", href: "/staff", icon: UserCheck },
-  { name: "Payroll", href: "/payroll", icon: DollarSign },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
 
 interface LayoutProps {
   children: ReactNode;
 }
 
-function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: any;
+}
+
+interface NavigationGroup {
+  name: string;
+  icon: any;
+  items: NavigationItem[];
+}
+
+const navigationGroups: (NavigationItem | NavigationGroup)[] = [
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  {
+    name: "Financials",
+    icon: DollarSign,
+    items: [
+      { name: "Accounts Payable", href: "/accounts-payable", icon: DollarSign },
+      { name: "Accounts Receivable", href: "/accounts-receivable", icon: DollarSign },
+      { name: "Credit Cards", href: "/credit-cards", icon: DollarSign },
+      { name: "Checks", href: "/checks", icon: DollarSign },
+      { name: "All Transactions", href: "/transactions", icon: DollarSign },
+    ],
+  },
+  {
+    name: "Fleet",
+    icon: Truck,
+    items: [
+      { name: "Vehicles", href: "/fleet", icon: Truck },
+      { name: "Maintenance", href: "/fleet/maintenance", icon: Truck },
+      { name: "Fuel Tracking", href: "/fuel", icon: Truck },
+      { name: "Documents", href: "/fleet/documents", icon: Truck },
+    ],
+  },
+  {
+    name: "People",
+    icon: Users,
+    items: [
+      { name: "Employees", href: "/staff", icon: Users },
+      { name: "Payroll", href: "/payroll", icon: Users },
+      { name: "Devices", href: "/devices", icon: Users },
+    ],
+  },
+  {
+    name: "Admin",
+    icon: SettingsIcon,
+    items: [
+      { name: "Approval Queue", href: "/admin/approvals", icon: SettingsIcon },
+      { name: "AI Review", href: "/admin/ai-review", icon: SettingsIcon },
+      { name: "Reminders", href: "/reminders", icon: SettingsIcon },
+      { name: "Vendors", href: "/vendors", icon: SettingsIcon },
+      { name: "Categories", href: "/categories", icon: SettingsIcon },
+      { name: "Reports", href: "/reports", icon: SettingsIcon },
+    ],
+  },
+];
+
+const isGroup = (item: any): item is NavigationGroup => {
+  return 'items' in item;
+};
+
+const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const { signOut, userProfile } = useAuth();
   const location = useLocation();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebar-collapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed));
+  }, [collapsed]);
+
+  useEffect(() => {
+    // Auto-expand group containing active route
+    navigationGroups.forEach((item) => {
+      if (isGroup(item)) {
+        const hasActive = item.items.some(child => 
+          location.pathname === child.href || location.pathname.startsWith(child.href + '/')
+        );
+        if (hasActive) {
+          setOpenGroups(prev => ({ ...prev, [item.name]: true }));
+        }
+      }
+    });
+  }, [location.pathname]);
+
+  const toggleGroup = (name: string) => {
+    setOpenGroups(prev => ({ ...prev, [name]: !prev[name] }));
+  };
 
   const handleSignOut = async () => {
     await signOut();
   };
 
-  const handleNavClick = () => {
-    onNavigate?.();
-  };
-
   return (
-    <>
-      <div className="flex items-center gap-2 p-4 border-b">
-        <div className="font-bold text-primary text-lg">APNexus</div>
+    <div className="flex h-full flex-col bg-slate-50 dark:bg-slate-900">
+      {/* Logo */}
+      <div className="flex h-16 items-center justify-between border-b px-4">
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <Building2 className="h-6 w-6 text-primary" />
+            <span className="text-lg font-semibold">APNexus</span>
+          </div>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCollapsed(!collapsed)}
+          className="ml-auto"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </div>
-      
-      <div className="flex-1 overflow-auto">
-        <div className="p-4">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">NAVIGATION</h3>
-          <div className="space-y-1">
-            {navigation.map((item) => (
+
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
+        {navigationGroups.map((item) => {
+          if (isGroup(item)) {
+            const isOpen = openGroups[item.name];
+            const hasActive = item.items.some(child => 
+              location.pathname === child.href || location.pathname.startsWith(child.href + '/')
+            );
+            return (
+              <Collapsible key={item.name} open={isOpen} onOpenChange={() => toggleGroup(item.name)}>
+                <CollapsibleTrigger asChild>
+                  <button className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-slate-200 dark:hover:bg-slate-800 ${
+                    hasActive ? 'text-primary' : 'text-slate-700 dark:text-slate-200'
+                  }`}>
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1 text-left">{item.name}</span>
+                        {isOpen ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </>
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+                {!collapsed && (
+                  <CollapsibleContent className="ml-8 space-y-1 pt-1">
+                    {item.items.map((child) => (
+                      <NavLink
+                        key={child.href}
+                        to={child.href}
+                        onClick={onNavigate}
+                        className={({ isActive }) =>
+                          `block rounded-lg px-3 py-2 text-sm transition-all ${
+                            isActive
+                              ? "border-l-4 border-primary bg-primary/10 font-medium text-primary"
+                              : "text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800"
+                          }`
+                        }
+                      >
+                        {child.name}
+                      </NavLink>
+                    ))}
+                  </CollapsibleContent>
+                )}
+              </Collapsible>
+            );
+          } else {
+            return (
               <NavLink
-                key={item.name}
+                key={item.href}
                 to={item.href}
-                onClick={handleNavClick}
+                onClick={onNavigate}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                    item.primary 
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold border-2 border-primary-foreground/20" 
-                      : isActive
-                        ? "bg-muted text-foreground"
-                        : "hover:bg-muted"
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                    isActive
+                      ? "border-l-4 border-primary bg-primary/10 text-primary"
+                      : "text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800"
                   }`
                 }
               >
-                <item.icon className="h-4 w-4" />
-                <span>{item.name}</span>
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                {!collapsed && <span>{item.name}</span>}
               </NavLink>
-            ))}
-          </div>
-        </div>
+            );
+          }
+        })}
+      </nav>
 
-        <div className="p-4 border-t">
+      {/* Task Status (if not collapsed) */}
+      {!collapsed && (
+        <div className="border-t p-4">
           <h3 className="text-sm font-medium text-muted-foreground mb-3">TASK STATUS</h3>
           <TaskStatusCards />
         </div>
-      </div>
-      
-      <div className="p-4 border-t">
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">
-              {userProfile?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{userProfile?.full_name || 'User'}</p>
-            <p className="text-xs text-muted-foreground truncate">{userProfile?.role || 'User'}</p>
+      )}
+
+      {/* User Profile */}
+      {!collapsed && (
+        <div className="border-t p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="text-xs">
+                {userProfile?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-medium truncate">{userProfile?.full_name || 'User'}</p>
+              <p className="text-xs text-muted-foreground truncate">{userProfile?.role || 'User'}</p>
+            </div>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSignOut}
+            className="w-full justify-start gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={handleSignOut} className="w-full">
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
-        </Button>
-      </div>
-    </>
+      )}
+    </div>
   );
-}
+};
 
-function AppSidebar() {
-  return (
-    <Sidebar>
-      <SidebarContent>
-        <NavigationContent />
-      </SidebarContent>
-    </Sidebar>
-  );
-}
-
-function MobileNavigation() {
+const MobileNavigation = ({ children }: { children: ReactNode }) => {
   const [open, setOpen] = useState(false);
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-80 p-0">
-        <NavigationContent onNavigate={() => setOpen(false)} />
-      </SheetContent>
-    </Sheet>
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 p-0">
+            <SidebarContent onNavigate={() => setOpen(false)} />
+          </SheetContent>
+        </Sheet>
+        <div className="flex items-center gap-2">
+          <Building2 className="h-6 w-6 text-primary" />
+          <span className="text-lg font-semibold">APNexus</span>
+        </div>
+      </header>
+      <main className="flex-1 p-4">
+        <ViolationBanner />
+        {children}
+      </main>
+    </div>
   );
-}
+};
 
 export default function Layout({ children }: LayoutProps) {
   const { user, loading } = useAuth();
@@ -133,7 +287,7 @@ export default function Layout({ children }: LayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
@@ -143,44 +297,22 @@ export default function Layout({ children }: LayoutProps) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Mobile-first PWA layout
   if (isMobile) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 items-center px-4">
-            <MobileNavigation />
-            <div className="flex-1 text-center">
-              <h1 className="text-lg font-semibold">APNexus</h1>
-            </div>
-            <div className="w-10" /> {/* Spacer for centering */}
-          </div>
-        </header>
-        <main className="flex-1 overflow-auto">
-          <div className="w-full px-4 py-6">
-            <ViolationBanner />
-            {children}
-          </div>
-        </main>
-      </div>
-    );
+    return <MobileNavigation>{children}</MobileNavigation>;
   }
 
-  // Desktop layout
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="h-16 border-b border-border flex items-center px-6">
-            <SidebarTrigger />
-          </header>
-          <main className="flex-1 p-6">
-            <ViolationBanner />
-            {children}
-          </main>
+    <div className="flex min-h-screen w-full">
+      <aside className="w-64 border-r transition-all duration-300">
+        <SidebarContent />
+      </aside>
+      <main className="flex-1 overflow-y-auto">
+        <div className="container mx-auto p-6">
+          <Breadcrumb />
+          <ViolationBanner />
+          {children}
         </div>
-      </div>
-    </SidebarProvider>
+      </main>
+    </div>
   );
 }
