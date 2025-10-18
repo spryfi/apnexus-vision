@@ -623,6 +623,48 @@ export type Database = {
         }
         Relationships: []
       }
+      category_learning: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          frequency: number | null
+          id: string
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          frequency?: number | null
+          id?: string
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          frequency?: number | null
+          id?: string
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_learning_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_learning_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checks: {
         Row: {
           amount: number
@@ -1100,6 +1142,60 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      duplicate_receipts: {
+        Row: {
+          created_at: string | null
+          id: string
+          match_details: Json | null
+          match_type: string
+          potential_duplicate_id: string | null
+          receipt_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          similarity_score: number
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          match_details?: Json | null
+          match_type: string
+          potential_duplicate_id?: string | null
+          receipt_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          similarity_score: number
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          match_details?: Json | null
+          match_type?: string
+          potential_duplicate_id?: string | null
+          receipt_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          similarity_score?: number
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duplicate_receipts_potential_duplicate_id_fkey"
+            columns: ["potential_duplicate_id"]
+            isOneToOne: false
+            referencedRelation: "processed_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "duplicate_receipts_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "processed_receipts"
             referencedColumns: ["id"]
           },
         ]
@@ -2303,6 +2399,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ocr_accuracy_metrics: {
+        Row: {
+          amount_accuracy: number | null
+          category_accuracy: number | null
+          created_at: string | null
+          date_accuracy: number | null
+          id: string
+          metric_date: string
+          overall_accuracy: number | null
+          total_processed: number | null
+          vendor_accuracy: number | null
+        }
+        Insert: {
+          amount_accuracy?: number | null
+          category_accuracy?: number | null
+          created_at?: string | null
+          date_accuracy?: number | null
+          id?: string
+          metric_date?: string
+          overall_accuracy?: number | null
+          total_processed?: number | null
+          vendor_accuracy?: number | null
+        }
+        Update: {
+          amount_accuracy?: number | null
+          category_accuracy?: number | null
+          created_at?: string | null
+          date_accuracy?: number | null
+          id?: string
+          metric_date?: string
+          overall_accuracy?: number | null
+          total_processed?: number | null
+          vendor_accuracy?: number | null
+        }
+        Relationships: []
+      }
       odometer_log: {
         Row: {
           changed_at: string
@@ -2867,6 +2999,99 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_receipts: {
+        Row: {
+          confidence_scores: Json
+          created_at: string | null
+          employee_id: string | null
+          extracted_data: Json
+          id: string
+          image_hash: string | null
+          image_url: string
+          invoice_id: string | null
+          processed_at: string | null
+          quality_score: number | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_scores: Json
+          created_at?: string | null
+          employee_id?: string | null
+          extracted_data: Json
+          id?: string
+          image_hash?: string | null
+          image_url: string
+          invoice_id?: string | null
+          processed_at?: string | null
+          quality_score?: number | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_scores?: Json
+          created_at?: string | null
+          employee_id?: string | null
+          extracted_data?: Json
+          id?: string
+          image_hash?: string | null
+          image_url?: string
+          invoice_id?: string | null
+          processed_at?: string | null
+          quality_score?: number | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processed_receipts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_fuel_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "processed_receipts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_spending_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "processed_receipts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_enhanced"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processed_receipts_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices_receivable"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processed_receipts_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string | null
@@ -3173,6 +3398,56 @@ export type Database = {
             columns: ["router_id"]
             isOneToOne: false
             referencedRelation: "routers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipt_flags: {
+        Row: {
+          created_at: string | null
+          flag_details: Json | null
+          flag_reason: string
+          flag_type: string
+          id: string
+          receipt_id: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          flag_details?: Json | null
+          flag_reason: string
+          flag_type: string
+          id?: string
+          receipt_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          flag_details?: Json | null
+          flag_reason?: string
+          flag_type?: string
+          id?: string
+          receipt_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_flags_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "processed_receipts"
             referencedColumns: ["id"]
           },
         ]
@@ -4660,6 +4935,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "vendor_documents_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_learning: {
+        Row: {
+          corrected_vendor: string
+          created_at: string | null
+          extracted_vendor: string
+          frequency: number | null
+          id: string
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          corrected_vendor: string
+          created_at?: string | null
+          extracted_vendor: string
+          frequency?: number | null
+          id?: string
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          corrected_vendor?: string
+          created_at?: string | null
+          extracted_vendor?: string
+          frequency?: number | null
+          id?: string
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_learning_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
             referencedRelation: "vendors"
