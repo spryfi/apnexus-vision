@@ -5,9 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileText, AlertTriangle, DollarSign, Droplet, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FuelUploadWizard } from "@/components/FuelUploadWizard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
+
+// Type based on actual fuel_statements table schema
+interface FuelStatement {
+  id: string;
+  file_name: string;
+  statement_start_date: string;
+  statement_end_date: string;
+  total_transactions: number;
+  total_amount: number;
+  total_gallons: number;
+  status: string;
+  upload_date: string;
+  ai_processing_notes?: string;
+}
 
 interface FuelTransaction {
   id: string;
@@ -24,6 +39,8 @@ interface FuelTransaction {
 }
 
 export default function Fuel() {
+  const [statements, setStatements] = useState<FuelStatement[]>([]);
+  const [selectedStatementId, setSelectedStatementId] = useState<string>("");
   const [transactions, setTransactions] = useState<FuelTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadWizard, setShowUploadWizard] = useState(false);
@@ -53,11 +70,26 @@ export default function Fuel() {
     };
   }, [transactions]);
 
+  const selectedStatement = useMemo(() => {
+    return statements.find(s => s.id === selectedStatementId);
+  }, [statements, selectedStatementId]);
+
   useEffect(() => {
+    fetchStatements();
     fetchTransactions();
     
-    // Set up real-time subscription
-    const channel = supabase
+    // Set up real-time subscriptions
+    const statementsChannel = supabase
+      .channel('fuel_statements_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'fuel_statements' },
+        () => {
+          fetchStatements();
+        }
+      )
+      .subscribe();
+
+    const transactionsChannel = supabase
       .channel('fuel_transactions_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'fuel_transactions_new' },
@@ -68,13 +100,39 @@ export default function Fuel() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(statementsChannel);
+      supabase.removeChannel(transactionsChannel);
     };
   }, []);
 
+  const fetchStatements = async () => {
+    try {
+      // Using 'as any' to bypass TypeScript until types are refreshed
+      const { data, error } = await supabase
+        .from('fuel_statements' as any)
+        .select('*') as any;
+
+      if (error) throw error;
+      
+      const typedData = (data || []) as unknown as FuelStatement[];
+      setStatements(typedData);
+      
+      // Auto-select most recent statement
+      if (typedData.length > 0 && !selectedStatementId) {
+        setSelectedStatementId(typedData[0].id);
+      }
+    } catch (error: any) {
+      console.error('Error loading statements:', error);
+      toast({
+        title: "Error loading statements",
+        description: error.message || "Could not load fuel statement data",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchTransactions = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('fuel_transactions_new')
         .select('*')
@@ -95,6 +153,7 @@ export default function Fuel() {
   };
 
   const handleUploadSuccess = () => {
+    fetchStatements();
     fetchTransactions();
   };
 
@@ -120,6 +179,19 @@ export default function Fuel() {
     });
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+      case 'processing':
+        return <Badge className="bg-yellow-100 text-yellow-800">Processing</Badge>;
+      case 'error':
+        return <Badge className="bg-red-100 text-red-800">Error</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -143,8 +215,8 @@ export default function Fuel() {
     );
   }
 
-  // Empty state when no transactions exist
-  if (transactions.length === 0 && !loading) {
+  // Empty state when no statements exist
+  if (statements.length === 0 && !loading) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -162,7 +234,7 @@ export default function Fuel() {
 
         <EmptyState
           icon={Droplet}
-          title="No fuel transactions yet"
+          title="No fuel statements uploaded yet"
           description="Upload your first WEX fleet card statement to start tracking fuel expenses with AI-powered vehicle matching"
           actionLabel="Upload First Statement"
           onAction={() => setShowUploadWizard(true)}
@@ -258,6 +330,74 @@ export default function Fuel() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Statement History Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Statement History</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Statement Period</label>
+            <Select value={selectedStatementId} onValueChange={setSelectedStatementId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a statement" />
+              </SelectTrigger>
+              <SelectContent>
+                {statements.map((statement) => (
+                  <SelectItem key={statement.id} value={statement.id}>
+                    Statement Ending: {formatDate(statement.statement_end_date)} 
+                    ({statement.total_transactions} transactions, {formatCurrency(statement.total_amount)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Statement Summary Card */}
+          {selectedStatement && (
+            <Card className="bg-muted/50">
+              <CardContent className="pt-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Statement Period</p>
+                    <p className="text-lg font-semibold">
+                      {formatDate(selectedStatement.statement_start_date)} - {formatDate(selectedStatement.statement_end_date)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
+                    <p className="text-lg font-semibold">{selectedStatement.total_transactions}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Spent</p>
+                    <p className="text-lg font-semibold">{formatCurrency(selectedStatement.total_amount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Gallons</p>
+                    <p className="text-lg font-semibold">{formatNumber(selectedStatement.total_gallons)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Upload Date</p>
+                    <p className="text-lg font-semibold">{formatDate(selectedStatement.upload_date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <div className="mt-1">{getStatusBadge(selectedStatement.status)}</div>
+                  </div>
+                </div>
+
+                {selectedStatement.ai_processing_notes && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">AI Processing Notes</p>
+                    <p className="text-sm">{selectedStatement.ai_processing_notes}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Transactions Summary */}
       <Card>
