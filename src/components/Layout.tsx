@@ -61,7 +61,8 @@ const navigationGroups: (NavigationItem | NavigationGroup)[] = [
     items: [
       { name: "Vehicles", href: "/fleet", icon: Truck },
       { name: "Maintenance", href: "/fleet/maintenance", icon: Truck },
-      { name: "Fuel Tracking", href: "/fuel", icon: Truck },
+      { name: "Fuel Management", href: "/fuel", icon: Truck },
+      { name: "Analytics & Reports", href: "/fleet/analytics", icon: Truck },
       { name: "Documents", href: "/fleet/documents", icon: Truck },
     ],
   },

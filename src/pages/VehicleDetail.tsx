@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, ArrowLeft, Plus, FileText, Fuel, Calendar, Settings, Eye, ExternalLink } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Plus, FileText, Fuel, Calendar, Settings, Eye, ExternalLink, DollarSign } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import AddMaintenanceDialog from "@/components/AddMaintenanceDialog";
 import { toast } from "@/hooks/use-toast";
 import { VehicleFuelStats } from "@/components/fleet/VehicleFuelStats";
 import { VehicleFuelTrendChart } from "@/components/fleet/VehicleFuelTrendChart";
 import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
+import { VehicleCostSummary } from "@/components/fleet/VehicleCostSummary";
 
 interface Vehicle {
   id: string;
@@ -276,6 +277,10 @@ const VehicleDetail: React.FC = () => {
             <FileText className="h-4 w-4" />
             Documents & Details
           </TabsTrigger>
+          <TabsTrigger value="cost-summary" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Cost Summary
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="maintenance">
@@ -408,13 +413,22 @@ const VehicleDetail: React.FC = () => {
                     <CardTitle>Fuel Transaction History</CardTitle>
                     <CardDescription>Complete record of all fill-ups for this vehicle</CardDescription>
                   </div>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate(`/fuel?vehicle=${vehicle?.asset_id}`)}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View All Fuel Transactions
-                  </Button>
+  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate(`/fuel?vehicle=${vehicle?.asset_id}`)}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View All Fuel Transactions
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => navigate(`/fleet/maintenance?vehicle=${vehicle?.id}`)}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      View All Maintenance
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -541,6 +555,47 @@ const VehicleDetail: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="cost-summary">
+          <VehicleCostSummary
+            fuelCost={fuelHistory.reduce((sum, f) => sum + (f.total_fuel_cost || 0), 0)}
+            maintenanceCost={maintenanceRecords.reduce((sum, m) => sum + m.cost, 0)}
+            monthlyTrend={(() => {
+              const last6Months = Array.from({ length: 6 }, (_, i) => {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                return { 
+                  month: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), 
+                  monthKey: `${d.getFullYear()}-${d.getMonth()}` 
+                };
+              }).reverse();
+
+              return last6Months.map(({ month, monthKey }) => {
+                const fuelForMonth = fuelHistory
+                  .filter(f => {
+                    const transDate = new Date(f.transaction_date);
+                    return `${transDate.getFullYear()}-${transDate.getMonth()}` === monthKey;
+                  })
+                  .reduce((sum, f) => sum + (f.total_fuel_cost || 0), 0);
+
+                const maintForMonth = maintenanceRecords
+                  .filter(m => {
+                    const serviceDate = new Date(m.service_date);
+                    return `${serviceDate.getFullYear()}-${serviceDate.getMonth()}` === monthKey;
+                  })
+                  .reduce((sum, m) => sum + m.cost, 0);
+                
+                return {
+                  month,
+                  fuel: fuelForMonth,
+                  maintenance: maintForMonth,
+                };
+              });
+            })()}
+            totalMiles={fuelHistory.reduce((sum, f) => sum + (f.distance_driven || 0), 0)}
+            fleetAvgCostPerMile={0.45}
+          />
         </TabsContent>
       </Tabs>
 
