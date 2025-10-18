@@ -2,3 +2,6 @@ project_id = "efrzzqqtmiazlsmwprmt"
 
 [functions.process-receipt-ocr]
 verify_jwt = true
+
+[functions.match-vehicle-ai]
+verify_jwt = true

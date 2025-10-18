@@ -353,39 +353,119 @@ async function performVehicleMatching(rawVehicleId: string, odometer: number, su
     }
   }
 
-  // Intelligent Odometer Matching (Smart Path)
-  if (odometer > 0) {
-    console.log('Attempting odometer-based matching for odometer:', odometer);
-    
-    const { data: odometerMatches, error } = await supabase
+  // Use AI for intelligent matching if no direct match
+  console.log('No direct match - attempting AI-powered vehicle matching');
+  
+  try {
+    // Fetch all vehicles for AI matching
+    const { data: vehicles, error: vehiclesError } = await supabase
       .from('vehicles')
-      .select('id, asset_id, make, model, year, current_odometer')
-      .lte('current_odometer', odometer)
-      .order('current_odometer', { ascending: false })
-      .limit(1);
+      .select('id, asset_id, vehicle_name, make, model, year, current_odometer')
+      .order('current_odometer', { ascending: false });
 
-    if (error) {
-      console.error('Error checking odometer matches:', error);
+    if (vehiclesError) {
+      console.error('Error fetching vehicles:', vehiclesError);
+      throw vehiclesError;
     }
 
-    if (odometerMatches && odometerMatches.length > 0) {
-      const match = odometerMatches[0];
-      console.log('Odometer match found:', match);
+    if (!vehicles || vehicles.length === 0) {
+      console.log('No vehicles found in database');
       return {
-        vehicleId: match.asset_id || match.id,
-        matchedVehicleId: match.id,
-        matchedVehicleName: `${match.year} ${match.make} ${match.model}`,
-        matchType: 'Odometer Match'
+        vehicleId: rawVehicleId || '',
+        matchType: 'Unmatched'
       };
     }
-  }
 
-  // No match found
-  console.log('No vehicle match found');
-  return {
-    vehicleId: rawVehicleId || '',
-    matchType: 'Unmatched'
-  };
+    // Call AI matching function
+    const matchResponse = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/functions/v1/match-vehicle-ai`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({
+          transaction: {
+            current_odometer: odometer,
+            custom_vehicle_asset_id: rawVehicleId,
+            product_code: '',
+            product_description: '',
+            driver_first_name: '',
+            driver_last_name: '',
+            merchant_city: '',
+            merchant_state: '',
+            vehicle_description: ''
+          },
+          vehicles
+        })
+      }
+    );
+
+    if (!matchResponse.ok) {
+      const errorText = await matchResponse.text();
+      console.error('AI matching error:', errorText);
+      throw new Error(`AI matching failed: ${matchResponse.status}`);
+    }
+
+    const matchResult = await matchResponse.json();
+    console.log('AI match result:', matchResult);
+
+    if (matchResult.matched_vehicle_id) {
+      const matchedVehicle = vehicles.find(v => v.id === matchResult.matched_vehicle_id);
+      return {
+        vehicleId: matchResult.vehicle_id || rawVehicleId || '',
+        matchedVehicleId: matchResult.matched_vehicle_id,
+        matchedVehicleName: matchedVehicle ? 
+          `${matchedVehicle.year} ${matchedVehicle.make} ${matchedVehicle.model}` : 
+          undefined,
+        matchType: matchResult.method === 'Direct ID Match' ? 'Direct ID Match' : 
+                  matchResult.method === 'AI Match' || matchResult.method === 'Odometer Match' ? 'Odometer Match' : 
+                  'Unmatched'
+      };
+    }
+
+    // No match found by AI
+    return {
+      vehicleId: rawVehicleId || '',
+      matchType: 'Unmatched'
+    };
+
+  } catch (error) {
+    console.error('Error in AI matching, falling back to simple odometer match:', error);
+    
+    // Fallback: Simple odometer-based matching
+    if (odometer > 0) {
+      const { data: odometerMatches, error } = await supabase
+        .from('vehicles')
+        .select('id, asset_id, make, model, year, current_odometer')
+        .lte('current_odometer', odometer)
+        .order('current_odometer', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking odometer matches:', error);
+      }
+
+      if (odometerMatches && odometerMatches.length > 0) {
+        const match = odometerMatches[0];
+        console.log('Fallback odometer match found:', match);
+        return {
+          vehicleId: match.asset_id || match.id,
+          matchedVehicleId: match.id,
+          matchedVehicleName: `${match.year} ${match.make} ${match.model}`,
+          matchType: 'Odometer Match'
+        };
+      }
+    }
+
+    // No match found
+    console.log('No vehicle match found');
+    return {
+      vehicleId: rawVehicleId || '',
+      matchType: 'Unmatched'
+    };
+  }
 }
 
 async function checkForAnomalies(

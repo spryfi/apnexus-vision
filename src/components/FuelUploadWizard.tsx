@@ -521,12 +521,32 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
         )}
 
         {step === 'processing' && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Processing Your File</h3>
-            <p className="text-muted-foreground text-center">
-              We're analyzing your fuel transactions and checking for duplicates...
-            </p>
+          <div className="flex flex-col items-center justify-center py-12 space-y-6">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <div className="space-y-3 text-center max-w-md">
+              <h3 className="text-xl font-semibold">Processing Your File</h3>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span>Reading CSV file...</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span>Parsing transactions...</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span>Matching vehicles with AI...</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Sparkles className="h-4 w-4 text-yellow-600" />
+                  <span>Analyzing for anomalies...</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground pt-2">
+                This may take a few moments for large files
+              </p>
+            </div>
           </div>
         )}
 
