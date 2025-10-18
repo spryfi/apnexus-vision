@@ -802,7 +802,21 @@ export type Database = {
             foreignKeyName: "credit_card_transactions_card_id_fkey"
             columns: ["card_id"]
             isOneToOne: false
-            referencedRelation: "credit_cards"
+            referencedRelation: "company_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_card_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_card_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_enhanced"
             referencedColumns: ["id"]
           },
         ]
