@@ -37,6 +37,7 @@ import AdminAIReview from "@/pages/AdminAIReview";
 import Reminders from "@/pages/Reminders";
 import Categories from "@/pages/Categories";
 import Reports from "@/pages/Reports";
+import Dashboard from "@/pages/Dashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<Layout><APFortress /></Layout>} />
+            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
             
             {/* Financials */}
             <Route path="/accounts-payable" element={<Layout><AccountsPayable /></Layout>} />
