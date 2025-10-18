@@ -362,8 +362,9 @@ export default function Fuel() {
 
       {/* Main Content with Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="review">Review Queue</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="by-vehicle">By Vehicle</TabsTrigger>
           <TabsTrigger value="by-driver">By Driver</TabsTrigger>
@@ -455,6 +456,17 @@ export default function Fuel() {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="review">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">Review Queue - Navigate to /fuel-review for full interface</p>
+              <Button className="mt-4" onClick={() => window.location.href = '/fuel-review'}>
+                Open Review Queue
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="analytics">

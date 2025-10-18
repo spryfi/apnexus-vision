@@ -365,6 +365,42 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_review_rules: {
+        Row: {
+          card_number: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          odometer_max: number | null
+          odometer_min: number | null
+          rule_type: string
+          vehicle_id: string
+        }
+        Insert: {
+          card_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          odometer_max?: number | null
+          odometer_min?: number | null
+          rule_type: string
+          vehicle_id: string
+        }
+        Update: {
+          card_number?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          odometer_max?: number | null
+          odometer_min?: number | null
+          rule_type?: string
+          vehicle_id?: string
+        }
+        Relationships: []
+      }
       batches: {
         Row: {
           batch_code_barcode: string | null
@@ -1503,50 +1539,224 @@ export type Database = {
           },
         ]
       }
-      fuel_transactions: {
+      fuel_statements: {
         Row: {
-          card_number: string | null
-          cost_per_gallon: number
-          created_at: string
-          driver_name: string
-          gallons: number
+          ai_processing_notes: string | null
+          created_at: string | null
+          file_name: string
+          file_url: string | null
           id: string
-          location: string
-          odometer_reading: number | null
-          total_cost: number
-          transaction_date: string
-          updated_at: string
-          vehicle: string
+          statement_end_date: string
+          statement_start_date: string | null
+          status: string | null
+          total_amount: number | null
+          total_gallons: number | null
+          total_transactions: number | null
+          updated_at: string | null
+          upload_date: string | null
+          uploaded_by: string | null
         }
         Insert: {
-          card_number?: string | null
-          cost_per_gallon: number
-          created_at?: string
-          driver_name: string
-          gallons: number
+          ai_processing_notes?: string | null
+          created_at?: string | null
+          file_name: string
+          file_url?: string | null
           id?: string
-          location: string
-          odometer_reading?: number | null
-          total_cost: number
-          transaction_date: string
-          updated_at?: string
-          vehicle: string
+          statement_end_date: string
+          statement_start_date?: string | null
+          status?: string | null
+          total_amount?: number | null
+          total_gallons?: number | null
+          total_transactions?: number | null
+          updated_at?: string | null
+          upload_date?: string | null
+          uploaded_by?: string | null
         }
         Update: {
-          card_number?: string | null
-          cost_per_gallon?: number
-          created_at?: string
-          driver_name?: string
-          gallons?: number
+          ai_processing_notes?: string | null
+          created_at?: string | null
+          file_name?: string
+          file_url?: string | null
           id?: string
-          location?: string
-          odometer_reading?: number | null
-          total_cost?: number
-          transaction_date?: string
-          updated_at?: string
-          vehicle?: string
+          statement_end_date?: string
+          statement_start_date?: string | null
+          status?: string | null
+          total_amount?: number | null
+          total_gallons?: number | null
+          total_transactions?: number | null
+          updated_at?: string | null
+          upload_date?: string | null
+          uploaded_by?: string | null
         }
         Relationships: []
+      }
+      fuel_transactions: {
+        Row: {
+          adjusted_odometer: number | null
+          card_number: string | null
+          cost_per_mile: number | null
+          created_at: string | null
+          current_odometer: number | null
+          custom_vehicle_asset_id: string | null
+          discount: number | null
+          distance_driven: number | null
+          driver_department: string | null
+          driver_first_name: string | null
+          driver_last_name: string | null
+          driver_middle_name: string | null
+          employee_id: string | null
+          fuel_economy: number | null
+          gallons: number | null
+          gross_cost: number | null
+          id: string
+          merchant_address: string | null
+          merchant_brand: string | null
+          merchant_city: string | null
+          merchant_name: string | null
+          merchant_postal_code: string | null
+          merchant_site_id: string | null
+          merchant_state: string | null
+          needs_review: boolean | null
+          net_cost: number | null
+          other_cost: number | null
+          post_date: string | null
+          previous_odometer: number | null
+          price_per_gallon: number | null
+          product_code: string | null
+          product_description: string | null
+          reported_tax: number | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          service_cost: number | null
+          statement_id: string | null
+          total_fuel_cost: number | null
+          trans_id: string | null
+          transaction_date: string
+          transaction_time: string | null
+          unit_of_measure: string | null
+          updated_at: string | null
+          vehicle_description: string | null
+          vehicle_id: string | null
+          vehicle_match_confidence: number | null
+          vehicle_match_method: string | null
+        }
+        Insert: {
+          adjusted_odometer?: number | null
+          card_number?: string | null
+          cost_per_mile?: number | null
+          created_at?: string | null
+          current_odometer?: number | null
+          custom_vehicle_asset_id?: string | null
+          discount?: number | null
+          distance_driven?: number | null
+          driver_department?: string | null
+          driver_first_name?: string | null
+          driver_last_name?: string | null
+          driver_middle_name?: string | null
+          employee_id?: string | null
+          fuel_economy?: number | null
+          gallons?: number | null
+          gross_cost?: number | null
+          id?: string
+          merchant_address?: string | null
+          merchant_brand?: string | null
+          merchant_city?: string | null
+          merchant_name?: string | null
+          merchant_postal_code?: string | null
+          merchant_site_id?: string | null
+          merchant_state?: string | null
+          needs_review?: boolean | null
+          net_cost?: number | null
+          other_cost?: number | null
+          post_date?: string | null
+          previous_odometer?: number | null
+          price_per_gallon?: number | null
+          product_code?: string | null
+          product_description?: string | null
+          reported_tax?: number | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          service_cost?: number | null
+          statement_id?: string | null
+          total_fuel_cost?: number | null
+          trans_id?: string | null
+          transaction_date: string
+          transaction_time?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
+          vehicle_description?: string | null
+          vehicle_id?: string | null
+          vehicle_match_confidence?: number | null
+          vehicle_match_method?: string | null
+        }
+        Update: {
+          adjusted_odometer?: number | null
+          card_number?: string | null
+          cost_per_mile?: number | null
+          created_at?: string | null
+          current_odometer?: number | null
+          custom_vehicle_asset_id?: string | null
+          discount?: number | null
+          distance_driven?: number | null
+          driver_department?: string | null
+          driver_first_name?: string | null
+          driver_last_name?: string | null
+          driver_middle_name?: string | null
+          employee_id?: string | null
+          fuel_economy?: number | null
+          gallons?: number | null
+          gross_cost?: number | null
+          id?: string
+          merchant_address?: string | null
+          merchant_brand?: string | null
+          merchant_city?: string | null
+          merchant_name?: string | null
+          merchant_postal_code?: string | null
+          merchant_site_id?: string | null
+          merchant_state?: string | null
+          needs_review?: boolean | null
+          net_cost?: number | null
+          other_cost?: number | null
+          post_date?: string | null
+          previous_odometer?: number | null
+          price_per_gallon?: number | null
+          product_code?: string | null
+          product_description?: string | null
+          reported_tax?: number | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          service_cost?: number | null
+          statement_id?: string | null
+          total_fuel_cost?: number | null
+          trans_id?: string | null
+          transaction_date?: string
+          transaction_time?: string | null
+          unit_of_measure?: string | null
+          updated_at?: string | null
+          vehicle_description?: string | null
+          vehicle_id?: string | null
+          vehicle_match_confidence?: number | null
+          vehicle_match_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_transactions_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_statements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_transactions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fuel_transactions_new: {
         Row: {
@@ -4881,6 +5091,45 @@ export type Database = {
           provider?: string
           updated_at?: string | null
           vehicle_id?: string | null
+        }
+        Relationships: []
+      }
+      vehicle_odometer_history: {
+        Row: {
+          id: string
+          new_odometer: number
+          notes: string | null
+          odometer_change: number | null
+          previous_odometer: number | null
+          source: string
+          source_id: string | null
+          updated_at: string | null
+          updated_by: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          id?: string
+          new_odometer: number
+          notes?: string | null
+          odometer_change?: number | null
+          previous_odometer?: number | null
+          source?: string
+          source_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          id?: string
+          new_odometer?: number
+          notes?: string | null
+          odometer_change?: number | null
+          previous_odometer?: number | null
+          source?: string
+          source_id?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          vehicle_id?: string
         }
         Relationships: []
       }
