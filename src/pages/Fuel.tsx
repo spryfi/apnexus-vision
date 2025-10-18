@@ -9,6 +9,7 @@ import { FuelTransactionsTable } from "@/components/FuelTransactionsTable";
 import { FuelAnalytics } from "@/components/fuel/FuelAnalytics";
 import { FuelByVehicle } from "@/components/fuel/FuelByVehicle";
 import { FuelByDriver } from "@/components/fuel/FuelByDriver";
+import { FuelMatrixView } from "@/components/fuel/FuelMatrixView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -361,11 +362,12 @@ export default function Fuel() {
 
       {/* Main Content with Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="by-vehicle">By Vehicle</TabsTrigger>
           <TabsTrigger value="by-driver">By Driver</TabsTrigger>
+          <TabsTrigger value="matrix">Matrix</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-6">
@@ -465,6 +467,10 @@ export default function Fuel() {
 
         <TabsContent value="by-driver">
           <FuelByDriver transactions={transactions} />
+        </TabsContent>
+
+        <TabsContent value="matrix">
+          <FuelMatrixView transactions={transactions} />
         </TabsContent>
       </Tabs>
 
