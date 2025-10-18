@@ -2,74 +2,77 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Label } from "@/components/ui/label";
-import { Plus, Filter, Fuel as FuelIcon, Flag } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Upload, FileText, AlertTriangle, DollarSign, Droplet, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { FuelSmartReminder } from "@/components/FuelSmartReminder";
 import { FuelUploadWizard } from "@/components/FuelUploadWizard";
-import { FuelKPIDashboard } from "@/components/FuelKPIDashboard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/EmptyState";
 
 interface FuelTransaction {
   id: string;
-  source_transaction_id?: string;
   transaction_date: string;
-  vehicle_id: string;
   employee_name: string;
+  vehicle_id: string | null;
   gallons: number;
   cost_per_gallon: number;
   total_cost: number;
   odometer: number;
-  merchant_name?: string;
+  merchant_name: string | null;
   status: string;
-  flag_reason?: string;
-  created_at: string;
+  flag_reason: string | null;
 }
 
 export default function Fuel() {
-  const [fuelTransactions, setFuelTransactions] = useState<FuelTransaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<FuelTransaction[]>([]);
+  const [transactions, setTransactions] = useState<FuelTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadWizard, setShowUploadWizard] = useState(false);
-  const [filters, setFilters] = useState({
-    employee: '',
-    vehicle: '',
-    month: '',
-    search: '',
-    status: ''
-  });
   const { toast } = useToast();
 
-  // Check if we need to show the smart reminder
-  const lastMonth = useMemo(() => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - 1);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  }, []);
+  // Metrics from current month transactions
+  const currentMonthMetrics = useMemo(() => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const currentMonthTransactions = transactions.filter(t => {
+      const transDate = new Date(t.transaction_date);
+      return transDate >= firstDay;
+    });
 
-  const lastMonthKey = useMemo(() => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - 1);
-    return date.toISOString().slice(0, 7);
-  }, []);
+    const totalSpend = currentMonthTransactions.reduce((sum, t) => sum + t.total_cost, 0);
+    const totalGallons = currentMonthTransactions.reduce((sum, t) => sum + t.gallons, 0);
+    const pendingReview = currentMonthTransactions.filter(t => 
+      t.status === 'Flagged for Review' || !t.vehicle_id
+    ).length;
 
-  const hasLastMonthData = useMemo(() => {
-    return fuelTransactions.some(t => 
-      t.transaction_date.slice(0, 7) === lastMonthKey
-    );
-  }, [fuelTransactions, lastMonthKey]);
+    return {
+      totalSpend,
+      totalGallons,
+      avgPricePerGallon: totalGallons > 0 ? (totalSpend / totalGallons) : 0,
+      pendingReview
+    };
+  }, [transactions]);
 
   useEffect(() => {
-    fetchFuelTransactions();
+    fetchTransactions();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('fuel_transactions_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'fuel_transactions_new' },
+        () => {
+          fetchTransactions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [fuelTransactions, filters]);
-
-  const fetchFuelTransactions = async () => {
+  const fetchTransactions = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -78,11 +81,12 @@ export default function Fuel() {
         .order('transaction_date', { ascending: false });
 
       if (error) throw error;
-      setFuelTransactions(data || []);
-    } catch (error) {
+      
+      setTransactions(data || []);
+    } catch (error: any) {
       toast({
-        title: "Error loading fuel records",
-        description: "Could not load fuel transaction data",
+        title: "Error loading fuel data",
+        description: error.message || "Could not load fuel transaction data",
         variant: "destructive",
       });
     } finally {
@@ -90,41 +94,8 @@ export default function Fuel() {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = fuelTransactions;
-
-    if (filters.employee) {
-      filtered = filtered.filter(t => 
-        t.employee_name.toLowerCase().includes(filters.employee.toLowerCase())
-      );
-    }
-    if (filters.vehicle) {
-      filtered = filtered.filter(t => 
-        t.vehicle_id.toLowerCase().includes(filters.vehicle.toLowerCase())
-      );
-    }
-    if (filters.month) {
-      filtered = filtered.filter(t => {
-        const transactionMonth = new Date(t.transaction_date).toISOString().slice(0, 7);
-        return transactionMonth === filters.month;
-      });
-    }
-    if (filters.status) {
-      filtered = filtered.filter(t => t.status === filters.status);
-    }
-    if (filters.search) {
-      filtered = filtered.filter(t => 
-        t.employee_name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        t.vehicle_id.toLowerCase().includes(filters.search.toLowerCase()) ||
-        (t.merchant_name && t.merchant_name.toLowerCase().includes(filters.search.toLowerCase()))
-      );
-    }
-
-    setFilteredTransactions(filtered);
-  };
-
   const handleUploadSuccess = () => {
-    fetchFuelTransactions();
+    fetchTransactions();
   };
 
   const formatCurrency = (amount: number) => {
@@ -134,8 +105,19 @@ export default function Fuel() {
     }).format(amount);
   };
 
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  };
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
   };
 
   if (loading) {
@@ -143,185 +125,169 @@ export default function Fuel() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <div className="h-8 bg-muted rounded w-48 mb-2"></div>
-            <div className="h-4 bg-muted rounded w-64"></div>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
           </div>
-          <div className="h-10 bg-muted rounded w-32"></div>
+          <Skeleton className="h-10 w-48" />
         </div>
-        <Card>
-          <CardContent className="p-6">
-            <div className="animate-pulse space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-12 bg-muted rounded"></div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-12 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state when no transactions exist
+  if (transactions.length === 0 && !loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Intelligent Fuel Management</h1>
+            <p className="text-muted-foreground">
+              AI-powered fuel tracking with automatic vehicle matching
+            </p>
+          </div>
+          <Button onClick={() => setShowUploadWizard(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Upload WEX Statement (CSV)
+          </Button>
+        </div>
+
+        <EmptyState
+          icon={Droplet}
+          title="No fuel transactions yet"
+          description="Upload your first WEX fleet card statement to start tracking fuel expenses with AI-powered vehicle matching"
+          actionLabel="Upload First Statement"
+          onAction={() => setShowUploadWizard(true)}
+        />
+
+        <FuelUploadWizard
+          isOpen={showUploadWizard}
+          onClose={() => setShowUploadWizard(false)}
+          onSuccess={handleUploadSuccess}
+        />
       </div>
     );
   }
 
   return (
-    <TooltipProvider>
-      <div className="space-y-6">
+    <div className="space-y-6">
+      {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <FuelIcon className="h-8 w-8" />
-            Intelligent Fuel Tracking
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Intelligent Fuel Management</h1>
           <p className="text-muted-foreground">
-            Semi-automated fleet fuel reconciliation with smart import and validation
+            AI-powered fuel tracking with automatic vehicle matching
           </p>
         </div>
-        <Button onClick={() => setShowUploadWizard(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Upload Statement
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowUploadWizard(true)}
+            className="gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Upload WEX Statement (CSV)
+          </Button>
+          <Button 
+            variant="secondary"
+            onClick={() => window.location.href = '/fuel-tracking'}
+            className="gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            View All Transactions
+          </Button>
+        </div>
       </div>
 
-      {/* Smart Reminder or KPI Dashboard */}
-      {!loading && !hasLastMonthData ? (
-        <FuelSmartReminder 
-          lastMonth={lastMonth}
-          onUploadClick={() => setShowUploadWizard(true)}
-        />
-      ) : (
-        <FuelKPIDashboard transactions={fuelTransactions} />
-      )}
+      {/* Metrics Dashboard */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Fuel Spend</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(currentMonthMetrics.totalSpend)}</div>
+            <p className="text-xs text-muted-foreground">This Month</p>
+          </CardContent>
+        </Card>
 
-      {/* Filters */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Gallons</CardTitle>
+            <Droplet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatNumber(currentMonthMetrics.totalGallons)}</div>
+            <p className="text-xs text-muted-foreground">This Month</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Price/Gallon</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(currentMonthMetrics.avgPricePerGallon)}</div>
+            <p className="text-xs text-muted-foreground">This Month</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{currentMonthMetrics.pendingReview}</div>
+            <p className="text-xs text-muted-foreground">
+              {currentMonthMetrics.pendingReview > 0 ? (
+                <Badge variant="destructive" className="text-xs">Needs Attention</Badge>
+              ) : (
+                "All Clear"
+              )}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Transactions Summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filter Records
-          </CardTitle>
+          <CardTitle>Recent Fuel Transactions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <div className="space-y-2">
-              <Label>Search</Label>
-              <Input
-                placeholder="Search records..."
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Employee</Label>
-              <Input
-                placeholder="Employee name..."
-                value={filters.employee}
-                onChange={(e) => setFilters({ ...filters, employee: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Vehicle</Label>
-              <Input
-                placeholder="Vehicle ID..."
-                value={filters.vehicle}
-                onChange={(e) => setFilters({ ...filters, vehicle: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Month</Label>
-              <Input
-                type="month"
-                value={filters.month}
-                onChange={(e) => setFilters({ ...filters, month: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              >
-                <option value="">All</option>
-                <option value="Verified">Verified</option>
-                <option value="Flagged for Review">Flagged for Review</option>
-              </select>
-            </div>
+          <div className="text-sm text-muted-foreground mb-4">
+            Showing the most recent fuel transactions. Click "View All Transactions" to see the complete list with advanced filtering.
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Fuel Transactions Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Fuel Records ({filteredTransactions.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Vehicle</TableHead>
-                  <TableHead>Merchant</TableHead>
-                  <TableHead>Gallons</TableHead>
-                  <TableHead>Price/Gallon</TableHead>
-                  <TableHead>Total Cost</TableHead>
-                  <TableHead>Odometer</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTransactions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                      No fuel records found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
-                      <TableCell className="font-medium">{transaction.employee_name}</TableCell>
-                      <TableCell>{transaction.vehicle_id}</TableCell>
-                      <TableCell>{transaction.merchant_name || 'N/A'}</TableCell>
-                      <TableCell>{transaction.gallons.toFixed(2)}</TableCell>
-                      <TableCell>{formatCurrency(transaction.cost_per_gallon)}</TableCell>
-                      <TableCell>{formatCurrency(transaction.total_cost)}</TableCell>
-                      <TableCell>{transaction.odometer?.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {transaction.status === 'Flagged for Review' && transaction.flag_reason ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button className="text-red-600 hover:text-red-800 transition-colors">
-                                    <Flag className="h-4 w-4" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs">
-                                  <div>
-                                    <p className="font-medium mb-1">Reason for Flag</p>
-                                    <p className="text-sm">{transaction.flag_reason}</p>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : null}
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            transaction.status === 'Verified' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {transaction.status}
-                          </span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="space-y-2">
+            {transactions.slice(0, 10).map((transaction) => (
+              <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{transaction.employee_name}</span>
+                    {transaction.vehicle_id && (
+                      <Badge variant="outline" className="text-xs">{transaction.vehicle_id}</Badge>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {formatDate(transaction.transaction_date)} • {transaction.merchant_name || 'Unknown Merchant'}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold">{formatCurrency(transaction.total_cost)}</div>
+                  <div className="text-sm text-muted-foreground">{formatNumber(transaction.gallons)} gal</div>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -332,7 +298,6 @@ export default function Fuel() {
         onClose={() => setShowUploadWizard(false)}
         onSuccess={handleUploadSuccess}
       />
-      </div>
-    </TooltipProvider>
+    </div>
   );
 }
