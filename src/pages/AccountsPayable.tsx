@@ -7,11 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Download, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Plus, Edit, Trash2, Download, CheckCircle, Clock, AlertCircle, FileText, Upload, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
+import { MarkAsPaidModal } from "@/components/ap/MarkAsPaidModal";
 
 interface Invoice {
   id: string;
@@ -23,6 +25,11 @@ interface Invoice {
   amount: number;
   status: string;
   description?: string;
+  receipt_url?: string;
+  receipt_file_name?: string;
+  paid_date?: string;
+  approved_by?: string;
+  approved_at?: string;
   created_at: string;
 }
 
@@ -40,6 +47,12 @@ export default function AccountsPayable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [showReceiptViewer, setShowReceiptViewer] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<{ url: string; fileName: string } | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [invoiceToPayState, setInvoiceToPay] = useState<Invoice | null>(null);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const [invoiceForm, setInvoiceForm] = useState<{
@@ -49,7 +62,9 @@ export default function AccountsPayable() {
     due_date: string;
     amount: string;
     description: string;
-    status: "Pending Approval" | "Approved for Payment" | "Paid";
+    category_id: string;
+    notes: string;
+    po_number: string;
   }>({
     invoice_number: '',
     vendor_id: '',
@@ -57,8 +72,12 @@ export default function AccountsPayable() {
     due_date: '',
     amount: '',
     description: '',
-    status: 'Pending Approval',
+    category_id: '',
+    notes: '',
+    po_number: '',
   });
+
+  const [categories, setCategories] = useState<{ id: string; category_name: string }[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -107,8 +126,17 @@ export default function AccountsPayable() {
 
       if (vendorsError) throw vendorsError;
 
+      // Fetch categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('expense_categories')
+        .select('id, category_name')
+        .order('category_name');
+
+      if (categoriesError) throw categoriesError;
+
       setInvoices(invoicesData || []);
       setVendors(vendorsData || []);
+      setCategories(categoriesData || []);
     } catch (error: any) {
       toast({
         title: "Error fetching data",
@@ -128,35 +156,130 @@ export default function AccountsPayable() {
       due_date: '',
       amount: '',
       description: '',
-      status: 'Pending Approval',
+      category_id: '',
+      notes: '',
+      po_number: '',
     });
     setSelectedInvoice(null);
+    setReceiptFile(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const fileType = file.type;
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+      
+      if (!validTypes.includes(fileType)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PDF, JPG, JPEG, or PNG file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "File must be less than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setReceiptFile(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!invoiceForm.invoice_number || !invoiceForm.vendor_id || !invoiceForm.amount) {
+    // Validation
+    if (!invoiceForm.vendor_id || !invoiceForm.amount || !invoiceForm.description || !invoiceForm.due_date) {
       toast({
         title: "Required fields missing",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields marked with *",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!receiptFile && !selectedInvoice) {
+      toast({
+        title: "Receipt required",
+        description: "⚠️ Receipt upload is mandatory. Transaction cannot be saved without supporting documentation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (invoiceForm.description.length < 10) {
+      toast({
+        title: "Description too short",
+        description: "Description must be at least 10 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (new Date(invoiceForm.due_date) < new Date(invoiceForm.invoice_date)) {
+      toast({
+        title: "Invalid dates",
+        description: "Due date cannot be before invoice date",
         variant: "destructive",
       });
       return;
     }
 
     try {
+      setUploadingReceipt(true);
+      let receiptUrl = selectedInvoice?.receipt_url || '';
+      let receiptFileName = selectedInvoice?.receipt_file_name || '';
+
+      // Upload receipt if new file is provided
+      if (receiptFile) {
+        const fileExt = receiptFile.name.split('.').pop();
+        const fileName = `invoice_${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('invoice-receipts')
+          .upload(filePath, receiptFile);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('invoice-receipts')
+          .getPublicUrl(filePath);
+
+        receiptUrl = publicUrl;
+        receiptFileName = receiptFile.name;
+      }
+
+      // Get current user for approval logic
+      const { data: { user } } = await supabase.auth.getUser();
+      const amount = parseFloat(invoiceForm.amount);
+      
+      // Auto-approve if < $2,500
+      const autoApprove = amount < 2500;
+      
       const invoiceData = {
-        invoice_number: invoiceForm.invoice_number,
+        invoice_number: invoiceForm.invoice_number || 'NI',
         vendor_id: invoiceForm.vendor_id,
         employee_id: null,
-        expense_category_id: null,
+        expense_category_id: invoiceForm.category_id || null,
         invoice_date: invoiceForm.invoice_date,
         due_date: invoiceForm.due_date,
-        amount: parseFloat(invoiceForm.amount),
-        status: invoiceForm.status as "Pending Approval" | "Approved for Payment" | "Paid",
+        amount: amount,
+        status: autoApprove ? 'Approved for Payment' as const : 'Pending Approval' as const,
         transaction_memo: invoiceForm.description,
         payment_method: 'Check' as const,
+        receipt_url: receiptUrl,
+        receipt_file_name: receiptFileName,
+        approved_by: autoApprove ? user?.id : null,
+        approved_at: autoApprove ? new Date().toISOString() : null,
       };
 
       if (selectedInvoice) {
@@ -178,9 +301,10 @@ export default function AccountsPayable() {
 
         if (error) throw error;
 
+        const autoApproveMessage = autoApprove ? ' (Auto-approved <$2,500)' : '';
         toast({
           title: "Invoice added",
-          description: "New invoice has been created successfully",
+          description: `New invoice has been created successfully${autoApproveMessage}`,
         });
       }
 
@@ -198,9 +322,6 @@ export default function AccountsPayable() {
 
   const handleEdit = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
-    const validStatus = ["Pending Approval", "Approved for Payment", "Paid"].includes(invoice.status)
-      ? invoice.status as "Pending Approval" | "Approved for Payment" | "Paid"
-      : "Pending Approval";
     
     setInvoiceForm({
       invoice_number: invoice.invoice_number || '',
@@ -209,33 +330,46 @@ export default function AccountsPayable() {
       due_date: invoice.due_date || '',
       amount: invoice.amount?.toString() || '',
       description: invoice.description || '',
-      status: validStatus,
+      category_id: '',
+      notes: '',
+      po_number: '',
     });
     setShowAddDialog(true);
   };
 
-  const handleMarkAsPaid = async (invoiceId: string) => {
+  const handleApprove = async (invoiceId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { error } = await supabase
         .from('transactions')
-        .update({ status: 'Paid' })
+        .update({ 
+          status: 'Approved for Payment',
+          approved_by: user?.id,
+          approved_at: new Date().toISOString(),
+        })
         .eq('id', invoiceId);
 
       if (error) throw error;
 
       toast({
-        title: "Invoice marked as paid",
-        description: "The invoice status has been updated",
+        title: "Invoice approved",
+        description: "Invoice has been approved for payment",
       });
 
       fetchData();
     } catch (error: any) {
       toast({
-        title: "Error updating invoice",
+        title: "Error approving invoice",
         description: error.message,
         variant: "destructive",
       });
     }
+  };
+
+  const viewReceipt = (url: string, fileName: string) => {
+    setSelectedReceipt({ url, fileName });
+    setShowReceiptViewer(true);
   };
 
   const handleDelete = async (invoiceId: string) => {
@@ -503,13 +637,14 @@ export default function AccountsPayable() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Days Until Due</TableHead>
+                  <TableHead>Receipt</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInvoices.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12">
+                    <TableCell colSpan={9} className="text-center py-12">
                       <div className="flex flex-col items-center gap-2">
                         <AlertCircle className="h-12 w-12 text-muted-foreground" />
                         <p className="text-lg font-medium">No invoices found</p>
@@ -538,32 +673,60 @@ export default function AccountsPayable() {
                       <TableCell>{getStatusBadge(invoice)}</TableCell>
                       <TableCell>{getDaysUntilDue(invoice.due_date)}</TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        {invoice.receipt_url ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => viewReceipt(invoice.receipt_url!, invoice.receipt_file_name!)}
+                          >
+                            <FileText className="h-4 w-4 text-blue-600" />
+                          </Button>
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-destructive" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
                           <Button 
                             size="sm" 
                             variant="outline" 
                             onClick={() => handleEdit(invoice)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3 w-3" />
                           </Button>
-                          {invoice.status !== 'Paid' && (
+                          {invoice.status === 'Pending Approval' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-blue-600 hover:text-blue-600"
+                              onClick={() => handleApprove(invoice.id)}
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {invoice.status !== 'Paid' && invoice.status === 'Approved for Payment' && (
                             <Button 
                               size="sm" 
                               variant="outline"
                               className="text-green-600 hover:text-green-600"
-                              onClick={() => handleMarkAsPaid(invoice.id)}
+                              onClick={() => {
+                                setInvoiceToPay(invoice);
+                                setShowPaymentModal(true);
+                              }}
                             >
-                              <CheckCircle className="h-4 w-4" />
+                              <DollarSign className="h-3 w-3" />
                             </Button>
                           )}
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleDelete(invoice.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {invoice.status === 'Pending Approval' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleDelete(invoice.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -659,47 +822,128 @@ export default function AccountsPayable() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={invoiceForm.status} 
-                  onValueChange={(value: "Pending Approval" | "Approved for Payment" | "Paid") => 
-                    setInvoiceForm({ ...invoiceForm, status: value })
-                  }
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={invoiceForm.category_id}
+                  onValueChange={(value) => setInvoiceForm({ ...invoiceForm, category_id: value })}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select category (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Pending Approval">Pending</SelectItem>
-                    <SelectItem value="Approved for Payment">Approved</SelectItem>
-                    <SelectItem value="Paid">Paid</SelectItem>
+                    <SelectItem value="">None</SelectItem>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.category_name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description *</Label>
               <Textarea
                 id="description"
                 value={invoiceForm.description}
                 onChange={(e) => setInvoiceForm({ ...invoiceForm, description: e.target.value })}
-                placeholder="Invoice description or notes..."
+                placeholder="Minimum 10 characters..."
                 rows={3}
+                required
               />
+              {invoiceForm.description && invoiceForm.description.length < 10 && (
+                <p className="text-xs text-destructive">Description must be at least 10 characters</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="po_number">PO Number</Label>
+              <Input
+                id="po_number"
+                value={invoiceForm.po_number}
+                onChange={(e) => setInvoiceForm({ ...invoiceForm, po_number: e.target.value })}
+                placeholder="Optional purchase order number"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={invoiceForm.notes}
+                onChange={(e) => setInvoiceForm({ ...invoiceForm, notes: e.target.value })}
+                placeholder="Additional notes (optional)"
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="receipt">Receipt/Invoice Image *</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('receipt')?.click()}
+                  className="w-full"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {receiptFile ? receiptFile.name : selectedInvoice?.receipt_file_name || 'Upload Receipt (Required)'}
+                </Button>
+                <input
+                  id="receipt"
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                />
+              </div>
+              {!receiptFile && !selectedInvoice && (
+                <div className="flex items-center gap-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>⚠️ Receipt upload is mandatory</span>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                PDF, JPG, JPEG, or PNG (max 10MB)
+              </p>
             </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {selectedInvoice ? 'Update Invoice' : 'Add Invoice'}
+              <Button type="submit" disabled={uploadingReceipt}>
+                {uploadingReceipt ? 'Uploading...' : selectedInvoice ? 'Update Invoice' : 'Add Invoice'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Receipt Viewer Modal */}
+      {selectedReceipt && (
+        <ReceiptViewerModal
+          open={showReceiptViewer}
+          onOpenChange={setShowReceiptViewer}
+          receiptUrl={selectedReceipt.url}
+          receiptFileName={selectedReceipt.fileName}
+        />
+      )}
+
+      {/* Mark as Paid Modal */}
+      {invoiceToPayState && (
+        <MarkAsPaidModal
+          open={showPaymentModal}
+          onOpenChange={setShowPaymentModal}
+          invoice={{
+            id: invoiceToPayState.id,
+            invoice_number: invoiceToPayState.invoice_number,
+            amount: invoiceToPayState.amount,
+          }}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
   );
 }

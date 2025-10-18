@@ -4793,6 +4793,8 @@ export type Database = {
           ai_flag_reason: string | null
           ai_flagged_status: boolean | null
           amount: number
+          approved_at: string | null
+          approved_by: string | null
           audit_trail: string | null
           check_number: string | null
           created_at: string
@@ -4808,8 +4810,12 @@ export type Database = {
           override_reason: string | null
           paid_date: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_receipt_file_name: string | null
+          payment_receipt_url: string | null
           payment_source: string | null
           payment_source_detail: string | null
+          receipt_file_name: string | null
+          receipt_url: string | null
           status: Database["public"]["Enums"]["transaction_status"]
           transaction_memo: string | null
           updated_at: string
@@ -4819,6 +4825,8 @@ export type Database = {
           ai_flag_reason?: string | null
           ai_flagged_status?: boolean | null
           amount: number
+          approved_at?: string | null
+          approved_by?: string | null
           audit_trail?: string | null
           check_number?: string | null
           created_at?: string
@@ -4834,8 +4842,12 @@ export type Database = {
           override_reason?: string | null
           paid_date?: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_receipt_file_name?: string | null
+          payment_receipt_url?: string | null
           payment_source?: string | null
           payment_source_detail?: string | null
+          receipt_file_name?: string | null
+          receipt_url?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_memo?: string | null
           updated_at?: string
@@ -4845,6 +4857,8 @@ export type Database = {
           ai_flag_reason?: string | null
           ai_flagged_status?: boolean | null
           amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
           audit_trail?: string | null
           check_number?: string | null
           created_at?: string
@@ -4860,8 +4874,12 @@ export type Database = {
           override_reason?: string | null
           paid_date?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_receipt_file_name?: string | null
+          payment_receipt_url?: string | null
           payment_source?: string | null
           payment_source_detail?: string | null
+          receipt_file_name?: string | null
+          receipt_url?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_memo?: string | null
           updated_at?: string
