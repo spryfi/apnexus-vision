@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 import APFortress from "@/pages/APFortress";
 import AdminHub from "@/pages/AdminHub";
 import NewExpense from "@/pages/NewExpense";
@@ -54,6 +55,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <UpdatePrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />

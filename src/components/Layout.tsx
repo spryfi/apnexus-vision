@@ -22,6 +22,10 @@ import {
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import TaskStatusCards from "@/components/TaskStatusCards";
+import { MobileNavigation } from "@/components/MobileNavigation";
+import { MobileHeader } from "@/components/MobileHeader";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 interface LayoutProps {
   children: ReactNode;
@@ -252,31 +256,31 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   );
 };
 
-const MobileNavigation = ({ children }: { children: ReactNode }) => {
-  const [open, setOpen] = useState(false);
+const MobileLayout = ({ children }: { children: ReactNode }) => {
+  const location = useLocation();
+  
+  // Get page title based on route
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path === "/" || path === "/dashboard") return "Dashboard";
+    if (path.includes("/transactions")) return "Transactions";
+    if (path.includes("/fleet")) return "Fleet";
+    if (path.includes("/staff")) return "People";
+    if (path.includes("/reports")) return "Reports";
+    if (path.includes("/settings")) return "Settings";
+    return "APNexus";
+  };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
-            <SidebarContent onNavigate={() => setOpen(false)} />
-          </SheetContent>
-        </Sheet>
-        <div className="flex items-center gap-2">
-          <Building2 className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold">APNexus</span>
-        </div>
-      </header>
-      <main className="flex-1 p-4">
+    <div className="flex min-h-screen flex-col pb-16">
+      <MobileHeader title={getPageTitle()} />
+      <main className="flex-1 overflow-y-auto p-4">
+        <OfflineIndicator />
         <ViolationBanner />
         {children}
       </main>
+      <MobileNavigation />
+      <PWAInstallPrompt />
     </div>
   );
 };
@@ -298,7 +302,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   if (isMobile) {
-    return <MobileNavigation>{children}</MobileNavigation>;
+    return <MobileLayout>{children}</MobileLayout>;
   }
 
   return (
@@ -308,9 +312,11 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
       <main className="flex-1 overflow-y-auto">
         <div className="container mx-auto p-6">
+          <OfflineIndicator />
           <Breadcrumb />
           <ViolationBanner />
           {children}
+          <PWAInstallPrompt />
         </div>
       </main>
     </div>
