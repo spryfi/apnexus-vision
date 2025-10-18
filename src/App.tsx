@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import APFortress from "@/pages/APFortress";
 import AdminHub from "@/pages/AdminHub";
 import NewExpense from "@/pages/NewExpense";
@@ -50,13 +51,14 @@ console.log("QueryClient created:", queryClient);
 console.log("React:", React);
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <UpdatePrompt />
-        <BrowserRouter>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <UpdatePrompt />
+          <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<Layout><APFortress /></Layout>} />
@@ -104,6 +106,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
