@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, CreditCard } from "lucide-react";
 import { CreditCardDisplay } from "./CreditCardDisplay";
 import { AddCardDialog } from "./AddCardDialog";
 import { ImportTransactionsDialog } from "./ImportTransactionsDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 export const CardsTab = () => {
   const [addCardOpen, setAddCardOpen] = useState(false);
@@ -23,6 +24,7 @@ export const CardsTab = () => {
             full_name
           )
         `)
+        .eq("is_active", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -32,13 +34,24 @@ export const CardsTab = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-48" />
-        ))}
+      <div className="space-y-4">
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-48" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-64" />
+          ))}
+        </div>
       </div>
     );
   }
+
+  const handleEdit = (card: any) => {
+    // For now, just show a toast. Full edit functionality can be added later
+    console.log("Edit card:", card);
+  };
 
   return (
     <div className="space-y-4">
@@ -53,19 +66,26 @@ export const CardsTab = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cards?.map((card) => (
-          <CreditCardDisplay key={card.id} card={card} />
-        ))}
-      </div>
-
-      {cards?.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          No cards found. Add your first card to get started.
+      {!cards || cards.length === 0 ? (
+        <EmptyState
+          icon={CreditCard}
+          title="No cards added yet"
+          description="Add your first company credit card to start tracking expenses and transactions."
+          actionLabel="Add First Card"
+          onAction={() => setAddCardOpen(true)}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {cards.map((card) => (
+            <CreditCardDisplay key={card.id} card={card} onEdit={handleEdit} />
+          ))}
         </div>
       )}
 
-      <AddCardDialog open={addCardOpen} onOpenChange={setAddCardOpen} />
+      <AddCardDialog 
+        open={addCardOpen} 
+        onOpenChange={setAddCardOpen}
+      />
       <ImportTransactionsDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
