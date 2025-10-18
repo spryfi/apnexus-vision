@@ -778,6 +778,7 @@ export type Database = {
       }
       company_cards: {
         Row: {
+          allowed_fuel_types: string[] | null
           assigned_to: string | null
           card_brand: string
           card_type: string
@@ -788,10 +789,14 @@ export type Database = {
           id: string
           is_active: boolean | null
           last_four: string
+          last_used_date: string | null
+          monthly_spending: number | null
           notes: string | null
+          spending_limit: number | null
           updated_at: string | null
         }
         Insert: {
+          allowed_fuel_types?: string[] | null
           assigned_to?: string | null
           card_brand: string
           card_type: string
@@ -802,10 +807,14 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_four: string
+          last_used_date?: string | null
+          monthly_spending?: number | null
           notes?: string | null
+          spending_limit?: number | null
           updated_at?: string | null
         }
         Update: {
+          allowed_fuel_types?: string[] | null
           assigned_to?: string | null
           card_brand?: string
           card_type?: string
@@ -816,7 +825,10 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_four?: string
+          last_used_date?: string | null
+          monthly_spending?: number | null
           notes?: string | null
+          spending_limit?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -882,6 +894,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "company_cards"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_card_transactions_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_spending_summary"
+            referencedColumns: ["card_id"]
           },
           {
             foreignKeyName: "credit_card_transactions_category_id_fkey"
@@ -5609,6 +5628,28 @@ export type Database = {
           transaction_count_this_month: number | null
         }
         Relationships: []
+      }
+      fuel_card_spending_summary: {
+        Row: {
+          assigned_to: string | null
+          card_id: string | null
+          cardholder_name: string | null
+          current_month_spending: number | null
+          last_four: string | null
+          last_transaction_date: string | null
+          monthly_spending: number | null
+          spending_limit: number | null
+          transaction_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_cards_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lead_qualification_view: {
         Row: {

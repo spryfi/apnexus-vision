@@ -16,6 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { CreditCard } from "lucide-react";
 
 // Type based on actual fuel_statements table schema
 interface FuelStatement {
@@ -55,6 +57,7 @@ export default function Fuel() {
   const [reviewingTransaction, setReviewingTransaction] = useState<FuelTransaction | null>(null);
   const [activeTab, setActiveTab] = useState('transactions');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Metrics from current month transactions
   const currentMonthMetrics = useMemo(() => {
@@ -290,19 +293,19 @@ export default function Fuel() {
         </div>
         <div className="flex gap-2">
           <Button 
+            variant="outline"
+            onClick={() => navigate("/fuel-cards")}
+            className="gap-2"
+          >
+            <CreditCard className="h-4 w-4" />
+            Manage Cards
+          </Button>
+          <Button 
             onClick={() => setShowUploadWizard(true)}
             className="gap-2"
           >
             <Upload className="h-4 w-4" />
             Upload WEX Statement (CSV)
-          </Button>
-          <Button 
-            variant="secondary"
-            onClick={() => window.location.href = '/fuel-tracking'}
-            className="gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            View All Transactions
           </Button>
         </div>
       </div>

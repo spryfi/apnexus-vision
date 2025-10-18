@@ -16,6 +16,7 @@ import Transactions from "@/pages/Transactions";
 import Vendors from "@/pages/Vendors";
 import VendorDetail from "@/pages/VendorDetail";
 import Fuel from "@/pages/Fuel";
+import FuelCards from "@/pages/FuelCards";
 import StaffEnhanced from "@/pages/StaffEnhanced";
 import EmployeeDetail from "@/pages/EmployeeDetail";
 import InvoiceEntry from "@/pages/InvoiceEntry";
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/fleet/maintenance" element={<Layout><FleetMaintenance /></Layout>} />
             <Route path="/fleet/documents" element={<Layout><FleetDocuments /></Layout>} />
             <Route path="/fuel" element={<Layout><Fuel /></Layout>} />
+            <Route path="/fuel-cards" element={<Layout><FuelCards /></Layout>} />
             
             {/* People */}
             <Route path="/staff" element={<Layout><StaffEnhanced /></Layout>} />

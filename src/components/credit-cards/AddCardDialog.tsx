@@ -12,9 +12,10 @@ import { toast } from "sonner";
 interface AddCardDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export const AddCardDialog = ({ open, onOpenChange }: AddCardDialogProps) => {
+export const AddCardDialog = ({ open, onOpenChange, onSuccess }: AddCardDialogProps) => {
   const queryClient = useQueryClient();
   const { register, handleSubmit, setValue, watch, reset } = useForm({
     defaultValues: {
@@ -64,6 +65,7 @@ export const AddCardDialog = ({ open, onOpenChange }: AddCardDialogProps) => {
       toast.success("Card added successfully");
       reset();
       onOpenChange(false);
+      onSuccess?.();
     },
     onError: (error) => {
       toast.error("Failed to add card");
