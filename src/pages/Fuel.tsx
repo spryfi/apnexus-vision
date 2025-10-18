@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileText, AlertTriangle, DollarSign, Droplet, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FuelUploadWizard } from "@/components/FuelUploadWizard";
+import { FuelTransactionsTable } from "@/components/FuelTransactionsTable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Type based on actual fuel_statements table schema
 interface FuelStatement {
@@ -44,6 +46,8 @@ export default function Fuel() {
   const [transactions, setTransactions] = useState<FuelTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadWizard, setShowUploadWizard] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<FuelTransaction | null>(null);
+  const [reviewingTransaction, setReviewingTransaction] = useState<FuelTransaction | null>(null);
   const { toast } = useToast();
 
   // Metrics from current month transactions
@@ -131,12 +135,24 @@ export default function Fuel() {
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (statementId?: string) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('fuel_transactions_new')
         .select('*')
         .order('transaction_date', { ascending: false });
+
+      // If a statement is selected, filter by statement period
+      if (statementId) {
+        const statement = statements.find(s => s.id === statementId);
+        if (statement) {
+          query = query
+            .gte('transaction_date', statement.statement_start_date)
+            .lte('transaction_date', statement.statement_end_date);
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -151,6 +167,13 @@ export default function Fuel() {
       setLoading(false);
     }
   };
+
+  // Fetch transactions when selected statement changes
+  useEffect(() => {
+    if (selectedStatementId) {
+      fetchTransactions(selectedStatementId);
+    }
+  }, [selectedStatementId]);
 
   const handleUploadSuccess = () => {
     fetchStatements();
@@ -399,38 +422,70 @@ export default function Fuel() {
         </CardContent>
       </Card>
 
-      {/* Recent Transactions Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Fuel Transactions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground mb-4">
-            Showing the most recent fuel transactions. Click "View All Transactions" to see the complete list with advanced filtering.
-          </div>
-          <div className="space-y-2">
-            {transactions.slice(0, 10).map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{transaction.employee_name}</span>
-                    {transaction.vehicle_id && (
-                      <Badge variant="outline" className="text-xs">{transaction.vehicle_id}</Badge>
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {formatDate(transaction.transaction_date)} • {transaction.merchant_name || 'Unknown Merchant'}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold">{formatCurrency(transaction.total_cost)}</div>
-                  <div className="text-sm text-muted-foreground">{formatNumber(transaction.gallons)} gal</div>
-                </div>
+      {/* Transactions Table */}
+      {selectedStatementId && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Statement Transactions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FuelTransactionsTable
+              transactions={transactions}
+              loading={loading}
+              onEditTransaction={setEditingTransaction}
+              onReviewTransaction={setReviewingTransaction}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Edit Transaction Dialog */}
+      <Dialog open={!!editingTransaction} onOpenChange={() => setEditingTransaction(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Transaction editing interface coming soon...
+            </p>
+            {editingTransaction && (
+              <div className="text-sm">
+                <p><strong>Driver:</strong> {editingTransaction.employee_name}</p>
+                <p><strong>Date:</strong> {formatDate(editingTransaction.transaction_date)}</p>
+                <p><strong>Total:</strong> {formatCurrency(editingTransaction.total_cost)}</p>
               </div>
-            ))}
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Transaction Dialog */}
+      <Dialog open={!!reviewingTransaction} onOpenChange={() => setReviewingTransaction(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Review Transaction</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Transaction review interface coming soon...
+            </p>
+            {reviewingTransaction && (
+              <div className="space-y-2 text-sm">
+                <p><strong>Driver:</strong> {reviewingTransaction.employee_name}</p>
+                <p><strong>Date:</strong> {formatDate(reviewingTransaction.transaction_date)}</p>
+                <p><strong>Total:</strong> {formatCurrency(reviewingTransaction.total_cost)}</p>
+                {reviewingTransaction.flag_reason && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+                    <p className="text-red-800 font-medium">Flag Reason:</p>
+                    <p className="text-red-700">{reviewingTransaction.flag_reason}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Upload Wizard */}
       <FuelUploadWizard
