@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, CheckCircle, AlertTriangle, Flag, Loader2, Sparkles, Edit } from "lucide-react";
+import { Upload, CheckCircle, AlertTriangle, Flag, Loader2, Sparkles, Edit, Calendar as CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface ProcessedTransaction {
   sourceTransactionId: string;
@@ -37,6 +43,11 @@ interface FuelUploadWizardProps {
 export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizardProps) {
   const [step, setStep] = useState<'upload' | 'processing' | 'verification'>('upload');
   const [file, setFile] = useState<File | null>(null);
+  const [statementEndDate, setStatementEndDate] = useState<Date>();
+  const [autoMatchVehicles, setAutoMatchVehicles] = useState(true);
+  const [updateOdometers, setUpdateOdometers] = useState(true);
+  const [flagLowConfidence, setFlagLowConfidence] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
   const [processedData, setProcessedData] = useState<{
     transactions: ProcessedTransaction[];
     summary: { total: number; new: number; duplicate: number; flagged: number };
@@ -67,10 +78,98 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
     }
   }, [isOpen]);
 
+  // Auto-detect date from filename
+  const extractDateFromFilename = (filename: string): Date | undefined => {
+    // Pattern: Transactions_MMDDYYYY_HHMM.csv
+    const match = filename.match(/(\d{8})_\d{4}\.csv$/);
+    if (match) {
+      const dateStr = match[1]; // MMDDYYYY
+      const month = parseInt(dateStr.substring(0, 2)) - 1; // 0-indexed
+      const day = parseInt(dateStr.substring(2, 4));
+      const year = parseInt(dateStr.substring(4, 8));
+      return new Date(year, month, day);
+    }
+    return undefined;
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
+      // Validate file size (10MB max)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (selectedFile.size > maxSize) {
+        toast({
+          title: "File Too Large",
+          description: "File size must be less than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file type
+      if (!selectedFile.name.endsWith('.csv')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setFile(selectedFile);
+      
+      // Try to auto-detect date from filename
+      const detectedDate = extractDateFromFilename(selectedFile.name);
+      if (detectedDate) {
+        setStatementEndDate(detectedDate);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      // Validate file size (10MB max)
+      const maxSize = 10 * 1024 * 1024;
+      if (droppedFile.size > maxSize) {
+        toast({
+          title: "File Too Large",
+          description: "File size must be less than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file type
+      if (!droppedFile.name.endsWith('.csv')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a CSV file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setFile(droppedFile);
+      
+      // Try to auto-detect date from filename
+      const detectedDate = extractDateFromFilename(droppedFile.name);
+      if (detectedDate) {
+        setStatementEndDate(detectedDate);
+      }
     }
   };
 
@@ -199,6 +298,10 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
   const handleClose = () => {
     setStep('upload');
     setFile(null);
+    setStatementEndDate(undefined);
+    setAutoMatchVehicles(true);
+    setUpdateOdometers(true);
+    setFlagLowConfidence(true);
     setProcessedData(null);
     setTransactionOverrides({});
     setTransactionTypeOverrides({});
@@ -262,56 +365,158 @@ export function FuelUploadWizard({ isOpen, onClose, onSuccess }: FuelUploadWizar
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {step === 'upload' && "Upload Fuel Statement"}
+            {step === 'upload' && "Upload WEX Fleet Card Statement"}
             {step === 'processing' && "Processing File"}
             {step === 'verification' && "Review Your Import"}
           </DialogTitle>
+          {step === 'upload' && (
+            <DialogDescription>
+              Upload your monthly WEX transaction report in CSV format
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         {step === 'upload' && (
           <div className="space-y-6">
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-              <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            {/* Step 1: File Upload */}
+            <div>
+              <h3 className="text-sm font-medium mb-3">Step 1: File Upload</h3>
+              <div 
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
+                  isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <Upload className={cn(
+                  "h-12 w-12 mx-auto mb-4",
+                  isDragging ? "text-primary" : "text-muted-foreground"
+                )} />
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Drop your WEX statement here</h3>
+                  <p className="text-sm text-muted-foreground">
+                    CSV files only • Maximum 10MB
+                  </p>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload">
+                    <Button variant="outline" className="cursor-pointer mt-2" asChild>
+                      <span>Choose File</span>
+                    </Button>
+                  </label>
+                </div>
+              </div>
+              
+              {file && (
+                <Card className="mt-4">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{file.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Step 2: Statement Date Selection */}
+            <div>
+              <h3 className="text-sm font-medium mb-3">Step 2: Statement Date Selection</h3>
               <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Drop your fuel statement here</h3>
-                <p className="text-muted-foreground">
-                  Upload your monthly fuel card CSV or Excel file
+                <Label>Statement End Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !statementEndDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {statementEndDate ? format(statementEndDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={statementEndDate}
+                      onSelect={setStatementEndDate}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">
+                  This is the last day of the statement period
                 </p>
-                <input
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload">
-                  <Button variant="outline" className="cursor-pointer" asChild>
-                    <span>Choose File</span>
-                  </Button>
-                </label>
               </div>
             </div>
-            
-            {file && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{file.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    <Button onClick={processFile}>
-                      Process File
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
+            {/* Step 3: Processing Options */}
+            <div>
+              <h3 className="text-sm font-medium mb-3">Step 3: Processing Options</h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="auto-match" 
+                    checked={autoMatchVehicles}
+                    onCheckedChange={(checked) => setAutoMatchVehicles(checked as boolean)}
+                  />
+                  <Label htmlFor="auto-match" className="text-sm font-normal cursor-pointer">
+                    Automatically match vehicles using AI
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="update-odometers"
+                    checked={updateOdometers}
+                    onCheckedChange={(checked) => setUpdateOdometers(checked as boolean)}
+                  />
+                  <Label htmlFor="update-odometers" className="text-sm font-normal cursor-pointer">
+                    Update vehicle odometers from latest readings
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="flag-confidence"
+                    checked={flagLowConfidence}
+                    onCheckedChange={(checked) => setFlagLowConfidence(checked as boolean)}
+                  />
+                  <Label htmlFor="flag-confidence" className="text-sm font-normal cursor-pointer">
+                    Flag transactions for manual review if confidence {"<"} 80%
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={processFile}
+                disabled={!file || !statementEndDate}
+              >
+                Upload and Process
+              </Button>
+            </div>
           </div>
         )}
 
