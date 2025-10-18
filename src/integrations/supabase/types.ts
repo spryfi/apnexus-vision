@@ -282,6 +282,53 @@ export type Database = {
           },
         ]
       }
+      ar_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          id: string
+          invoice_id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          payment_date?: string
+          payment_method: string
+          reference_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ar_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices_receivable"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -576,6 +623,54 @@ export type Database = {
         }
         Relationships: []
       }
+      checks: {
+        Row: {
+          amount: number
+          category_id: string | null
+          check_date: string
+          check_image_url: string | null
+          check_number: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          memo: string | null
+          payee: string
+          status: string | null
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          check_date: string
+          check_image_url?: string | null
+          check_number: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          memo?: string | null
+          payee: string
+          status?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          check_date?: string
+          check_image_url?: string | null
+          check_number?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          memo?: string | null
+          payee?: string
+          status?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -655,6 +750,98 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      credit_card_transactions: {
+        Row: {
+          amount: number
+          card_id: string | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          employee_id: string | null
+          id: string
+          merchant: string
+          receipt_uploaded: boolean | null
+          receipt_url: string | null
+          status: string | null
+          transaction_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          card_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_id?: string | null
+          id?: string
+          merchant: string
+          receipt_uploaded?: boolean | null
+          receipt_url?: string | null
+          status?: string | null
+          transaction_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          card_id?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          employee_id?: string | null
+          id?: string
+          merchant?: string
+          receipt_uploaded?: boolean | null
+          receipt_url?: string | null
+          status?: string | null
+          transaction_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_card_transactions_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_cards: {
+        Row: {
+          assigned_to: string | null
+          card_name: string
+          card_type: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_four: string | null
+          spending_limit: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          card_name: string
+          card_type: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_four?: string | null
+          spending_limit?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          card_name?: string
+          card_type?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_four?: string | null
+          spending_limit?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       customer_credits: {
         Row: {
@@ -989,6 +1176,48 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_devices: {
+        Row: {
+          assigned_date: string
+          created_at: string | null
+          device_name: string
+          device_type: string
+          employee_id: string | null
+          id: string
+          notes: string | null
+          return_date: string | null
+          serial_number: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_date: string
+          created_at?: string | null
+          device_name: string
+          device_type: string
+          employee_id?: string | null
+          id?: string
+          notes?: string | null
+          return_date?: string | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_date?: string
+          created_at?: string | null
+          device_name?: string
+          device_type?: string
+          employee_id?: string | null
+          id?: string
+          notes?: string | null
+          return_date?: string | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           created_at: string
@@ -1317,6 +1546,100 @@ export type Database = {
           used?: boolean
         }
         Relationships: []
+      }
+      invoice_line_items: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          unit_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_line_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices_receivable"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices_receivable: {
+        Row: {
+          amount: number
+          amount_paid: number | null
+          created_at: string | null
+          created_by: string | null
+          customer_id: string | null
+          description: string | null
+          due_date: string
+          id: string
+          invoice_date: string
+          invoice_number: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          amount_paid?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          due_date: string
+          id?: string
+          invoice_date: string
+          invoice_number: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          amount_paid?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_id?: string | null
+          description?: string | null
+          due_date?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_receivable_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       jobs: {
         Row: {
@@ -1879,6 +2202,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      maintenance_schedules: {
+        Row: {
+          created_at: string | null
+          id: string
+          interval_miles: number | null
+          interval_months: number | null
+          last_service_date: string | null
+          last_service_odometer: number | null
+          maintenance_type: string
+          next_due_date: string | null
+          next_due_odometer: number | null
+          status: string | null
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interval_miles?: number | null
+          interval_months?: number | null
+          last_service_date?: string | null
+          last_service_odometer?: number | null
+          maintenance_type: string
+          next_due_date?: string | null
+          next_due_odometer?: number | null
+          status?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interval_miles?: number | null
+          interval_months?: number | null
+          last_service_date?: string | null
+          last_service_odometer?: number | null
+          maintenance_type?: string
+          next_due_date?: string | null
+          next_due_odometer?: number | null
+          status?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: []
       }
       odometer_log: {
         Row: {
@@ -2814,6 +3182,48 @@ export type Database = {
           id?: string
           referred_lead_id?: string
           referrer_id?: string
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          notified: boolean | null
+          reminder_date: string
+          reminder_type: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          notified?: boolean | null
+          reminder_date: string
+          reminder_type: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          notified?: boolean | null
+          reminder_date?: string
+          reminder_type?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -3954,6 +4364,84 @@ export type Database = {
           role?: string
           temp_password?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vehicle_insurance: {
+        Row: {
+          coverage_type: string | null
+          created_at: string | null
+          document_url: string | null
+          effective_date: string
+          expiry_date: string
+          id: string
+          policy_number: string
+          premium_amount: number | null
+          provider: string
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          coverage_type?: string | null
+          created_at?: string | null
+          document_url?: string | null
+          effective_date: string
+          expiry_date: string
+          id?: string
+          policy_number: string
+          premium_amount?: number | null
+          provider: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          coverage_type?: string | null
+          created_at?: string | null
+          document_url?: string | null
+          effective_date?: string
+          expiry_date?: string
+          id?: string
+          policy_number?: string
+          premium_amount?: number | null
+          provider?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: []
+      }
+      vehicle_registrations: {
+        Row: {
+          created_at: string | null
+          document_url: string | null
+          expiry_date: string
+          id: string
+          issue_date: string
+          registration_number: string
+          state: string | null
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date: string
+          id?: string
+          issue_date: string
+          registration_number: string
+          state?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_url?: string | null
+          expiry_date?: string
+          id?: string
+          issue_date?: string
+          registration_number?: string
+          state?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
         }
         Relationships: []
       }
