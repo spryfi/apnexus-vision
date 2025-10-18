@@ -24,7 +24,7 @@ export function useVehicleFuelData() {
       // Fetch all fuel transactions for this month
       const { data: fuelTransactions, error } = await supabase
         .from('fuel_transactions_new')
-        .select('vehicle_id, net_cost, gallons')
+        .select('vehicle_id, total_cost, gallons')
         .gte('transaction_date', firstDayOfMonth.toISOString())
         .lte('transaction_date', now.toISOString());
 
@@ -39,13 +39,13 @@ export function useVehicleFuelData() {
 
         const existing = fuelMap.get(vehicleId);
         if (existing) {
-          existing.monthlySpending += transaction.net_cost || 0;
+          existing.monthlySpending += transaction.total_cost || 0;
           existing.fillupCount += 1;
         } else {
           fuelMap.set(vehicleId, {
             vehicleId: vehicleId,
             assetId: vehicleId,
-            monthlySpending: transaction.net_cost || 0,
+            monthlySpending: transaction.total_cost || 0,
             fillupCount: 1,
           });
         }

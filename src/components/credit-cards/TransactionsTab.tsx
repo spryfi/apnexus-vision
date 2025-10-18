@@ -13,6 +13,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AddTransactionDialog } from "./AddTransactionDialog";
 import { TransactionDetailDialog } from "./TransactionDetailDialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
+import { FileText } from "lucide-react";
 
 export const TransactionsTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,6 +23,8 @@ export const TransactionsTab = () => {
   const [receiptFilter, setReceiptFilter] = useState("all");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
+  const [receiptViewerOpen, setReceiptViewerOpen] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<{ url: string; fileName: string } | null>(null);
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["credit-card-transactions", searchTerm, statusFilter, cardFilter, receiptFilter],
@@ -72,6 +76,11 @@ export const TransactionsTab = () => {
       Rejected: "bg-red-500/10 text-red-700 border-red-500/20",
     };
     return styles[status as keyof typeof styles] || "";
+  };
+
+  const handleViewReceipt = (receiptUrl: string, fileName: string) => {
+    setSelectedReceipt({ url: receiptUrl, fileName });
+    setReceiptViewerOpen(true);
   };
 
   if (isLoading) {
@@ -193,12 +202,21 @@ export const TransactionsTab = () => {
                 </TableCell>
                 <TableCell className="max-w-[200px] truncate">{tx.description || "-"}</TableCell>
                 <TableCell>
-                  {tx.receipt_uploaded ? (
-                    <Check className="h-5 w-5 text-green-600" />
-                  ) : tx.status === "Flagged" ? (
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  {tx.receipt_url ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewReceipt(tx.receipt_url, `Receipt-${tx.merchant}`);
+                      }}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <FileText className="h-5 w-5" />
+                    </button>
                   ) : (
-                    <X className="h-5 w-5 text-red-600" />
+                    <div className="flex items-center gap-1 text-red-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      <span className="text-xs font-medium">Missing</span>
+                    </div>
                   )}
                 </TableCell>
                 <TableCell>
@@ -244,6 +262,14 @@ export const TransactionsTab = () => {
           transactionId={selectedTxId}
           open={!!selectedTxId}
           onOpenChange={(open) => !open && setSelectedTxId(null)}
+        />
+      )}
+      {selectedReceipt && (
+        <ReceiptViewerModal
+          open={receiptViewerOpen}
+          onOpenChange={setReceiptViewerOpen}
+          receiptUrl={selectedReceipt.url}
+          receiptFileName={selectedReceipt.fileName}
         />
       )}
     </div>
