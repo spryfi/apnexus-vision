@@ -147,10 +147,20 @@ const Fleet: React.FC = () => {
           <h1 className="text-3xl font-bold text-foreground">Fleet Management</h1>
           <p className="text-muted-foreground">Manage all company vehicles and maintenance records</p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Vehicle
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/fleet/analytics')}
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="h-4 w-4" />
+            Analytics & Reports
+          </Button>
+          <Button onClick={() => setShowAddDialog(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Vehicle
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}

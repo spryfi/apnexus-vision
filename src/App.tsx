@@ -31,6 +31,7 @@ import CreditCards from "@/pages/CreditCards";
 import Checks from "@/pages/Checks";
 import FleetMaintenance from "@/pages/FleetMaintenance";
 import FleetDocuments from "@/pages/FleetDocuments";
+import FleetAnalytics from "@/pages/FleetAnalytics";
 import Devices from "@/pages/Devices";
 import AdminApprovals from "@/pages/AdminApprovals";
 import AdminAIReview from "@/pages/AdminAIReview";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/fleet" element={<Layout><Fleet /></Layout>} />
             <Route path="/fleet/:id" element={<Layout><VehicleDetail /></Layout>} />
             <Route path="/fleet/:vehicleId/add-maintenance" element={<Layout><AddMaintenanceRecord /></Layout>} />
+            <Route path="/fleet/analytics" element={<Layout><FleetAnalytics /></Layout>} />
             <Route path="/fleet/maintenance" element={<Layout><FleetMaintenance /></Layout>} />
             <Route path="/fleet/documents" element={<Layout><FleetDocuments /></Layout>} />
             <Route path="/fuel" element={<Layout><Fuel /></Layout>} />
