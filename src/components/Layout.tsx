@@ -50,7 +50,6 @@ const navigationGroups: (NavigationItem | NavigationGroup)[] = [
     icon: DollarSign,
     items: [
       { name: "Accounts Payable", href: "/accounts-payable", icon: DollarSign },
-      { name: "Accounts Receivable", href: "/accounts-receivable", icon: DollarSign },
       { name: "Credit Cards", href: "/credit-cards", icon: DollarSign },
       { name: "Checks", href: "/checks", icon: DollarSign },
       { name: "All Transactions", href: "/transactions", icon: DollarSign },

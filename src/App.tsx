@@ -26,7 +26,6 @@ import VehicleDetail from "@/pages/VehicleDetail";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 import AccountsPayable from "@/pages/AccountsPayable";
-import AccountsReceivable from "@/pages/AccountsReceivable";
 import CreditCards from "@/pages/CreditCards";
 import Checks from "@/pages/Checks";
 import FleetMaintenance from "@/pages/FleetMaintenance";
@@ -67,7 +66,6 @@ const App = () => (
             
             {/* Financials */}
             <Route path="/accounts-payable" element={<Layout><AccountsPayable /></Layout>} />
-            <Route path="/accounts-receivable" element={<Layout><AccountsReceivable /></Layout>} />
             <Route path="/credit-cards" element={<Layout><CreditCards /></Layout>} />
             <Route path="/checks" element={<Layout><Checks /></Layout>} />
             <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
