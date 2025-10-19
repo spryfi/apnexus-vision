@@ -24,7 +24,7 @@ interface Invoice {
   due_date: string;
   amount: number;
   status: string;
-  description?: string;
+  transaction_memo?: string;
   receipt_url?: string;
   receipt_file_name?: string;
   paid_date?: string;
@@ -329,7 +329,7 @@ export default function AccountsPayable() {
       invoice_date: invoice.invoice_date || '',
       due_date: invoice.due_date || '',
       amount: invoice.amount?.toString() || '',
-      description: invoice.description || '',
+      description: invoice.transaction_memo || '',
       category_id: '',
       notes: '',
       po_number: '',
@@ -350,7 +350,10 @@ export default function AccountsPayable() {
         })
         .eq('id', invoiceId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error approving invoice:', error);
+        throw error;
+      }
 
       toast({
         title: "Invoice approved",
@@ -359,9 +362,10 @@ export default function AccountsPayable() {
 
       fetchData();
     } catch (error: any) {
+      console.error('Full error details:', error);
       toast({
         title: "Error approving invoice",
-        description: error.message,
+        description: error.message || 'An unknown error occurred',
         variant: "destructive",
       });
     }
@@ -460,7 +464,7 @@ export default function AccountsPayable() {
     const matchesSearch = !searchQuery || 
       invoice.invoice_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       invoice.vendors?.vendor_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      invoice.transaction_memo?.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesStatus && matchesVendor && matchesSearch;
   });
