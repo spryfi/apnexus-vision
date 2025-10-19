@@ -669,7 +669,7 @@ export default function AccountsPayable() {
                 ) : (
                   filteredInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">{invoice.invoice_number || '-'}</TableCell>
+                      <TableCell className="font-medium">{invoice.invoice_number || 'NI'}</TableCell>
                       <TableCell>{invoice.vendors?.vendor_name || '-'}</TableCell>
                       <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
                       <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
