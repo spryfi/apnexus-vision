@@ -1,0 +1,21 @@
+-- Enable RLS on tables (not views) that have policies but RLS is not enabled
+-- Based on security scan finding: SUPA_policy_exists_rls_disabled
+
+-- Enable RLS on base tables only (skipping views)
+ALTER TABLE IF EXISTS public.admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.agreements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.anchor_address ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.anchor_qualification ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.batches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.billing_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.campaign_sends ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.candidates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.customer_credits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.customer_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.drip_marketing ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.email_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.email_tracking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.email_verifications ENABLE ROW LEVEL SECURITY;
