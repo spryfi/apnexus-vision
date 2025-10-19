@@ -708,7 +708,7 @@ export default function AccountsPayable() {
                               <CheckCircle className="h-3 w-3" />
                             </Button>
                           )}
-                          {invoice.status !== 'Paid' && invoice.status === 'Approved for Payment' && (
+                          {invoice.status !== 'Paid' && ['Pending Approval', 'Approved for Payment'].includes(invoice.status) && (
                             <Button 
                               size="sm" 
                               variant="outline"
@@ -717,6 +717,7 @@ export default function AccountsPayable() {
                                 setInvoiceToPay(invoice);
                                 setShowPaymentModal(true);
                               }}
+                              title="Mark as Paid"
                             >
                               <DollarSign className="h-3 w-3" />
                             </Button>

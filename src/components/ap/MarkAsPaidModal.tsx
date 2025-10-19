@@ -120,16 +120,21 @@ export function MarkAsPaidModal({ open, onOpenChange, invoice, onSuccess }: Mark
         .from('invoice-receipts')
         .getPublicUrl(filePath);
 
+      // Get current user for approval tracking
+      const { data: { user } } = await supabase.auth.getUser();
+
       // Update transaction status and payment info
       const { error: updateError } = await supabase
         .from('transactions')
         .update({
           status: 'Paid' as const,
           paid_date: paymentForm.payment_date,
-          payment_method: 'Check' as const,
+          payment_method: paymentForm.payment_method as "Credit Card" | "ACH" | "Check" | "Fleet Fuel Card" | "Debit Card",
           check_number: paymentForm.check_number || null,
           payment_receipt_url: publicUrl,
           payment_receipt_file_name: paymentReceipt.name,
+          approved_by: user?.id,
+          approved_at: new Date().toISOString(),
         })
         .eq('id', invoice.id);
 
