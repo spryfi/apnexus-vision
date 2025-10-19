@@ -24,7 +24,6 @@ export const CardsTab = () => {
             full_name
           )
         `)
-        .eq("is_active", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
