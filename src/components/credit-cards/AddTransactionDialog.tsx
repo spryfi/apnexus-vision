@@ -25,7 +25,10 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
     merchant: "",
     amount: "",
     category_id: "",
+    employee_id: "",
     description: "",
+    reference_number: "",
+    notes: "",
   });
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
@@ -58,8 +61,24 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
     },
   });
 
+  // Fetch employees
+  const { data: employees } = useQuery({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees_enhanced")
+        .select("id, full_name")
+        .eq("status", "Active")
+        .order("full_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const createTransaction = useMutation({
     mutationFn: async (data: typeof formData & { receipt_url: string; receipt_file_name: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { error } = await supabase
         .from("credit_card_transactions")
         .insert({
@@ -68,10 +87,12 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
           merchant: data.merchant,
           amount: parseFloat(data.amount),
           category_id: data.category_id || null,
+          employee_id: data.employee_id || null,
           description: data.description,
           receipt_url: data.receipt_url,
           receipt_uploaded: true,
-          status: "Approved",
+          status: "Pending",
+          created_by: user?.id,
         });
       if (error) throw error;
     },
@@ -192,7 +213,10 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
       merchant: "",
       amount: "",
       category_id: "",
+      employee_id: "",
       description: "",
+      reference_number: "",
+      notes: "",
     });
     setReceiptFile(null);
     setReceiptPreview(null);
@@ -286,6 +310,22 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="employee">Employee</Label>
+            <Select value={formData.employee_id} onValueChange={(value) => setFormData({ ...formData, employee_id: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select employee (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {employees?.map((employee) => (
+                  <SelectItem key={employee.id} value={employee.id}>
+                    {employee.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="description">Description * (min 10 characters)</Label>
             <Textarea
               value={formData.description}
@@ -294,6 +334,25 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
               rows={3}
               required
               minLength={10}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="reference">Reference Number</Label>
+            <Input
+              value={formData.reference_number}
+              onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
+              placeholder="Transaction reference (optional)"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Additional notes (optional)"
+              rows={2}
             />
           </div>
 
