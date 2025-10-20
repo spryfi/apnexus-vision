@@ -2683,6 +2683,8 @@ export type Database = {
         Row: {
           cost: number
           created_at: string
+          flag_reason: string | null
+          flagged_for_review: boolean | null
           id: string
           odometer_at_service: number
           receipt_scan_url: string | null
@@ -2697,6 +2699,8 @@ export type Database = {
         Insert: {
           cost: number
           created_at?: string
+          flag_reason?: string | null
+          flagged_for_review?: boolean | null
           id?: string
           odometer_at_service: number
           receipt_scan_url?: string | null
@@ -2711,6 +2715,8 @@ export type Database = {
         Update: {
           cost?: number
           created_at?: string
+          flag_reason?: string | null
+          flagged_for_review?: boolean | null
           id?: string
           odometer_at_service?: number
           receipt_scan_url?: string | null
@@ -6101,6 +6107,10 @@ export type Database = {
       is_file_already_processed: {
         Args: { file_hash: string }
         Returns: boolean
+      }
+      revalidate_vehicle_maintenance: {
+        Args: { p_vehicle_id: string }
+        Returns: undefined
       }
       text_to_bytea: {
         Args: { data: string }

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Download, Calendar, DollarSign, Wrench, FileCheck, FileX } from "lucide-react";
+import { Plus, Search, Download, Calendar, DollarSign, Wrench, FileCheck, FileX, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { MaintenanceDetailDialog } from "@/components/fleet/MaintenanceDetailDialog";
 import { AddMaintenanceWizard } from "@/components/AddMaintenanceWizard";
@@ -258,10 +258,19 @@ export default function FleetMaintenance() {
                       setSelectedRecord(record);
                       setDetailDialogOpen(true);
                     }}
-                    className="border-b hover:bg-muted/30 cursor-pointer transition-colors"
+                    className={`border-b cursor-pointer transition-colors ${
+                      record.flagged_for_review 
+                        ? 'bg-red-50 hover:bg-red-100' 
+                        : 'hover:bg-muted/30'
+                    }`}
                   >
                     <td className="p-4">
-                      {format(new Date(record.service_date), 'MMM dd, yyyy')}
+                      <div className="flex items-center gap-2">
+                        {record.flagged_for_review && (
+                          <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                        )}
+                        {format(new Date(record.service_date), 'MMM dd, yyyy')}
+                      </div>
                     </td>
                     <td className="p-4">
                       <div>
@@ -280,10 +289,20 @@ export default function FleetMaintenance() {
                           {record.maintenance_line_items.length} line item{record.maintenance_line_items.length !== 1 ? 's' : ''}
                         </p>
                       )}
+                      {record.flagged_for_review && (
+                        <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                          <span className="line-clamp-2">{record.flag_reason}</span>
+                        </p>
+                      )}
                     </td>
                     <td className="p-4">{record.vendors?.vendor_name || '-'}</td>
                     <td className="p-4 text-right">
-                      {record.odometer_at_service ? `${record.odometer_at_service.toLocaleString()} mi` : '-'}
+                      {record.odometer_at_service ? (
+                        <span className={record.flagged_for_review ? 'text-red-700 font-bold' : ''}>
+                          {record.odometer_at_service.toLocaleString()} mi
+                        </span>
+                      ) : '-'}
                     </td>
                     <td className="p-4 text-right font-semibold">
                       ${parseFloat(String(record.cost || 0)).toFixed(2)}
