@@ -618,7 +618,10 @@ export default function AccountsPayable() {
               </div>
             </div>
             <div className="flex gap-2 items-end">
-              <Button onClick={() => setShowAddDialog(true)}>
+              <Button onClick={() => {
+                resetForm();
+                setShowAddDialog(true);
+              }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Invoice
               </Button>
@@ -658,7 +661,10 @@ export default function AccountsPayable() {
                             : "Try adjusting your filters"}
                         </p>
                         {invoices.length === 0 && (
-                          <Button onClick={() => setShowAddDialog(true)} className="mt-2">
+                          <Button onClick={() => {
+                            resetForm();
+                            setShowAddDialog(true);
+                          }} className="mt-2">
                             <Plus className="h-4 w-4 mr-2" />
                             Add First Invoice
                           </Button>
@@ -748,7 +754,7 @@ export default function AccountsPayable() {
         setShowAddDialog(open);
         if (!open) resetForm();
       }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedInvoice ? 'Edit Invoice' : 'Add New Invoice'}
