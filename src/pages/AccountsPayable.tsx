@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
 import { MarkAsPaidModal } from "@/components/ap/MarkAsPaidModal";
 import { AddExpenseWizard } from "@/components/ap/AddExpenseWizard";
+import { PendingReviewTab } from "@/components/ap/PendingReviewTab";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
@@ -971,9 +972,22 @@ export default function AccountsPayable() {
         </TabsContent>
 
         <TabsContent value="pending-review">
+          <PendingReviewTab 
+            onViewDetails={(id) => {
+              // Optional: implement view details logic
+              console.log('View details for:', id);
+            }}
+            onUploadReceipt={(id) => {
+              // Optional: implement upload receipt logic
+              console.log('Upload receipt for:', id);
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="overdue">
           <Card>
             <CardContent className="p-6">
-              <p className="text-muted-foreground mb-4">Expenses pending approval</p>
+              <p className="text-muted-foreground mb-4">Overdue invoices</p>
               {/* Reuse the same table structure */}
               <div className="overflow-x-auto">
                 <Table>
@@ -996,8 +1010,8 @@ export default function AccountsPayable() {
                         <TableCell colSpan={9} className="text-center py-12">
                           <div className="flex flex-col items-center gap-2">
                             <AlertCircle className="h-12 w-12 text-muted-foreground" />
-                            <p className="text-lg font-medium">No pending items</p>
-                            <p className="text-sm text-muted-foreground">All invoices have been reviewed</p>
+                            <p className="text-lg font-medium">No overdue items</p>
+                            <p className="text-sm text-muted-foreground">All invoices are current</p>
                           </div>
                         </TableCell>
                       </TableRow>
