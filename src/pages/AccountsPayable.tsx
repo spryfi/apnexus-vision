@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
 import { MarkAsPaidModal } from "@/components/ap/MarkAsPaidModal";
+import { AddExpenseWizard } from "@/components/ap/AddExpenseWizard";
 import { useQuery } from "@tanstack/react-query";
 
 interface Invoice {
@@ -43,10 +44,12 @@ interface Vendor {
 export default function AccountsPayable() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; full_name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("All");
   const [vendorFilter, setVendorFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAddWizard, setShowAddWizard] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
@@ -137,9 +140,19 @@ export default function AccountsPayable() {
 
       if (categoriesError) throw categoriesError;
 
+      // Fetch employees
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('employees_enhanced')
+        .select('id, full_name')
+        .eq('status', 'Active')
+        .order('full_name');
+
+      if (employeesError) throw employeesError;
+
       setInvoices(invoicesData || []);
       setVendors(vendorsData || []);
       setCategories(categoriesData || []);
+      setEmployees(employeesData || []);
     } catch (error: any) {
       toast({
         title: "Error fetching data",
@@ -767,12 +780,9 @@ export default function AccountsPayable() {
                   </div>
                 </div>
                 <div className="flex gap-2 items-end">
-                  <Button onClick={() => {
-                    resetForm();
-                    setShowAddDialog(true);
-                  }}>
+                  <Button onClick={() => setShowAddWizard(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Invoice
+                    Add Expense
                   </Button>
                   <Button variant="outline" onClick={handleExport}>
                     <Download className="h-4 w-4 mr-2" />
@@ -810,12 +820,9 @@ export default function AccountsPayable() {
                             : "Try adjusting your filters"}
                         </p>
                         {invoices.length === 0 && (
-                          <Button onClick={() => {
-                            resetForm();
-                            setShowAddDialog(true);
-                          }} className="mt-2">
+                          <Button onClick={() => setShowAddWizard(true)} className="mt-2">
                             <Plus className="h-4 w-4 mr-2" />
-                            Add First Invoice
+                            Add First Expense
                           </Button>
                         )}
                       </div>
@@ -1326,6 +1333,16 @@ export default function AccountsPayable() {
           onSuccess={fetchData}
         />
       )}
+
+      {/* Add Expense Wizard */}
+      <AddExpenseWizard
+        isOpen={showAddWizard}
+        onClose={() => setShowAddWizard(false)}
+        onSuccess={fetchData}
+        vendors={vendors}
+        categories={categories}
+        employees={employees}
+      />
     </div>
   );
 }
