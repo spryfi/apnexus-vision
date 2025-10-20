@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, CreditCard, Fuel, FileCheck, UserCheck, RefreshCw, MoreHorizontal, ArrowLeft, Upload } from "lucide-react";
+import { FileText, CreditCard, Fuel, FileCheck, UserCheck, RefreshCw, MoreHorizontal, ArrowLeft, CheckCircle, Loader2, Save, ChevronLeft, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AddExpenseWizardProps {
   isOpen: boolean;
@@ -121,6 +122,61 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
 
   const selectedType = expenseTypes.find(t => t.id === expenseType);
 
+  // Get required fields based on expense type
+  const getRequiredFields = () => {
+    const base = ['transaction_date', 'amount', 'description'];
+    
+    switch (expenseType) {
+      case 'vendor_invoice':
+        return [...base, 'invoice_number', 'due_date'];
+      case 'credit_card_purchase':
+        return [...base, 'employee_id'];
+      case 'check_payment':
+        return [...base, 'check_number'];
+      case 'employee_reimbursement':
+        return [...base, 'employee_id'];
+      case 'recurring_bill':
+        return [...base, 'due_date'];
+      default:
+        return base;
+    }
+  };
+
+  const isReceiptRequired = selectedType?.requiresReceipt || parseFloat(formData.amount) >= 500;
+
+  // Get missing fields for validation
+  const getMissingFields = () => {
+    const missing: string[] = [];
+    
+    if (!formData.transaction_date) missing.push('Transaction Date');
+    if (!formData.amount) missing.push('Amount');
+    if (!formData.description) missing.push('Description');
+    
+    if (expenseType === 'vendor_invoice' && !formData.invoice_number) missing.push('Invoice Number');
+    if (expenseType === 'check_payment' && !formData.check_number) missing.push('Check Number');
+    if (['credit_card_purchase', 'employee_reimbursement'].includes(expenseType) && !formData.employee_id) missing.push('Employee');
+    if (['vendor_invoice', 'recurring_bill'].includes(expenseType) && !formData.due_date) missing.push('Due Date');
+    if (isReceiptRequired && !receiptFile) missing.push('Receipt Upload');
+    
+    return missing;
+  };
+
+  const isFormValid = () => {
+    return getMissingFields().length === 0;
+  };
+
+  const getDaysUntilDue = (dueDate: string) => {
+    if (!dueDate) return '';
+    const today = new Date();
+    const due = new Date(dueDate);
+    const days = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (days < 0) return `${Math.abs(days)} days overdue`;
+    if (days === 0) return 'Due today';
+    if (days === 1) return 'Due tomorrow';
+    return `${days}`;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -153,48 +209,10 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
     e.preventDefault();
 
     // Validation
-    if (!formData.amount || !formData.description) {
+    if (!isFormValid()) {
       toast({
         title: "Required fields missing",
         description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (selectedType?.requiresReceipt && !receiptFile) {
-      toast({
-        title: "Receipt required",
-        description: `A receipt is required for ${selectedType.label}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (selectedType?.requiresInvoiceNumber && !formData.invoice_number) {
-      toast({
-        title: "Invoice number required",
-        description: `An invoice number is required for ${selectedType.label}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Amount >= $500 always requires receipt
-    const amount = parseFloat(formData.amount);
-    if (amount >= 500 && !receiptFile) {
-      toast({
-        title: "Receipt required",
-        description: "Expenses of $500 or more require a receipt",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (expenseType === 'employee_reimbursement' && !formData.employee_id) {
-      toast({
-        title: "Employee required",
-        description: "Please select the employee to reimburse",
         variant: "destructive",
       });
       return;
@@ -243,6 +261,8 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
             paymentMethod = 'invoice';
         }
       }
+
+      const amount = parseFloat(formData.amount);
 
       // Create expense transaction
       const expenseData = {
@@ -378,21 +398,12 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
         
         {step === 2 && (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setStep(1)}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-            </div>
-
+            {/* Common Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="transaction_date">Transaction Date *</Label>
+                <Label htmlFor="transaction_date">
+                  Transaction Date <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="transaction_date"
                   type="date"
@@ -403,41 +414,31 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount *</Label>
+                <Label htmlFor="amount">
+                  Amount <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="amount"
                   type="number"
                   step="0.01"
+                  min="0.01"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   placeholder="0.00"
                   required
                 />
                 {formData.amount && parseFloat(formData.amount) >= 500 && (
-                  <p className="text-xs text-orange-600">⚠️ Receipt required (≥ $500)</p>
+                  <p className="text-xs text-yellow-600">
+                    ⚠️ Expenses ≥ $500 require receipt upload
+                  </p>
                 )}
               </div>
             </div>
 
-            {expenseType === 'employee_reimbursement' && (
-              <div className="space-y-2">
-                <Label htmlFor="employee_id">Employee *</Label>
-                <Select value={formData.employee_id} onValueChange={(value) => setFormData({ ...formData, employee_id: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* Conditional Fields Based on Expense Type */}
 
-            {['vendor_invoice', 'recurring_bill', 'other'].includes(expenseType) && (
+            {/* Vendor - for most types except employee reimbursement */}
+            {expenseType !== 'employee_reimbursement' && (
               <div className="space-y-2">
                 <Label htmlFor="vendor_id">Vendor</Label>
                 <Select value={formData.vendor_id} onValueChange={(value) => setFormData({ ...formData, vendor_id: value })}>
@@ -456,9 +457,12 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
               </div>
             )}
 
-            {selectedType?.requiresInvoiceNumber && (
+            {/* Invoice Number - for vendor_invoice */}
+            {expenseType === 'vendor_invoice' && (
               <div className="space-y-2">
-                <Label htmlFor="invoice_number">Invoice Number *</Label>
+                <Label htmlFor="invoice_number">
+                  Invoice Number <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="invoice_number"
                   value={formData.invoice_number}
@@ -466,18 +470,67 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
                   placeholder="INV-12345"
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  Enter "NI" if no invoice number available
+                </p>
               </div>
             )}
 
+            {/* Check Number - for check_payment */}
             {expenseType === 'check_payment' && (
               <div className="space-y-2">
-                <Label htmlFor="check_number">Check Number</Label>
+                <Label htmlFor="check_number">
+                  Check Number <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="check_number"
                   value={formData.check_number}
                   onChange={(e) => setFormData({ ...formData, check_number: e.target.value })}
                   placeholder="1001"
+                  required
                 />
+              </div>
+            )}
+
+            {/* Employee - for credit_card_purchase, employee_reimbursement */}
+            {['credit_card_purchase', 'employee_reimbursement'].includes(expenseType) && (
+              <div className="space-y-2">
+                <Label htmlFor="employee_id">
+                  Employee <span className="text-red-500">*</span>
+                </Label>
+                <Select value={formData.employee_id} onValueChange={(value) => setFormData({ ...formData, employee_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Due Date - for vendor_invoice, recurring_bill */}
+            {['vendor_invoice', 'recurring_bill'].includes(expenseType) && (
+              <div className="space-y-2">
+                <Label htmlFor="due_date">
+                  Due Date <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="due_date"
+                  type="date"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  required
+                />
+                {formData.due_date && (
+                  <p className="text-xs text-muted-foreground">
+                    {getDaysUntilDue(formData.due_date)} days until due
+                  </p>
+                )}
               </div>
             )}
 
@@ -499,7 +552,9 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">
+                Description <span className="text-red-500">*</span>
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -510,55 +565,91 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
               />
             </div>
 
-            {['vendor_invoice', 'recurring_bill'].includes(expenseType) && (
-              <div className="space-y-2">
-                <Label htmlFor="due_date">Due Date</Label>
-                <Input
-                  id="due_date"
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes (optional)"
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
+            {/* Receipt Upload with conditional styling */}
+            <div className={`border-2 rounded-lg p-4 ${isReceiptRequired ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : 'border-border'}`}>
               <Label htmlFor="receipt">
-                Receipt Upload
-                {selectedType?.requiresReceipt && <span className="text-red-500"> *</span>}
+                Receipt Upload {isReceiptRequired && <span className="text-red-500">*</span>}
               </Label>
+              {isReceiptRequired && (
+                <p className="text-sm text-red-600 dark:text-red-400 mb-2">
+                  ⚠️ Receipt is mandatory for this expense type
+                </p>
+              )}
               <Input
                 id="receipt"
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={handleFileChange}
               />
-              {receiptFile && (
-                <p className="text-sm text-green-600">✓ {receiptFile.name}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 Accepted formats: PDF, JPG, PNG (max 10MB)
               </p>
+              {receiptFile && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>{receiptFile.name} ready to upload</span>
+                </div>
+              )}
+              {!isReceiptRequired && !receiptFile && (
+                <p className="text-xs text-yellow-600 mt-2">
+                  ℹ️ Receipt optional but recommended for audit trail
+                </p>
+              )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={handleClose}>
-                Cancel
+            <div className="space-y-2">
+              <Label htmlFor="notes">Additional Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Any additional information..."
+                rows={2}
+              />
+            </div>
+
+            {/* Validation Summary */}
+            {!isFormValid() && formData.amount && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <h4 className="font-semibold mb-2">Required Fields Missing:</h4>
+                  <ul className="space-y-1">
+                    {getMissingFields().map(field => (
+                      <li key={field}>• {field}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex justify-between pt-4 border-t">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setStep(1)}
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Back
               </Button>
-              <Button type="submit" disabled={uploading}>
-                {uploading ? 'Saving...' : 'Add Expense'}
-              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={!isFormValid() || uploading}>
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Expense
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         )}
