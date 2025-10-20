@@ -372,8 +372,33 @@ export default function AccountsPayable() {
   };
 
   const viewReceipt = (url: string, fileName: string) => {
-    setSelectedReceipt({ url, fileName });
-    setShowReceiptViewer(true);
+    if (!url || url === '') {
+      toast({
+        title: "No receipt available",
+        description: "No receipt has been uploaded for this invoice",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setSelectedReceipt({ url, fileName });
+      setShowReceiptViewer(true);
+    } catch (error: any) {
+      toast({
+        title: "Error opening receipt",
+        description: error.message || "Failed to open receipt viewer",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleMissingReceiptClick = () => {
+    toast({
+      title: "No receipt uploaded",
+      description: "This invoice does not have a receipt. Please upload one by editing the invoice.",
+      variant: "destructive",
+    });
   };
 
   const handleDelete = async (invoiceId: string) => {
@@ -687,12 +712,20 @@ export default function AccountsPayable() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => viewReceipt(invoice.receipt_url!, invoice.receipt_file_name!)}
+                            onClick={() => viewReceipt(invoice.receipt_url!, invoice.receipt_file_name || 'Receipt')}
+                            title="View receipt"
                           >
                             <FileText className="h-4 w-4 text-blue-600" />
                           </Button>
                         ) : (
-                          <AlertCircle className="h-4 w-4 text-destructive" />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleMissingReceiptClick}
+                            title="No receipt uploaded"
+                          >
+                            <AlertCircle className="h-4 w-4 text-destructive" />
+                          </Button>
                         )}
                       </TableCell>
                       <TableCell>
