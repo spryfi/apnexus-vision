@@ -102,7 +102,6 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
           service_provider_vendor_id: data.service_provider_vendor_id || null,
           service_description: data.service_description,
           cost: data.cost,
-          notes: data.notes,
           receipt_scan_url: receiptUrl,
           created_by: user?.id
         })
@@ -188,6 +187,10 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
       case 2:
         if (!formData.service_date) {
           toast.error('Service date is required');
+          return false;
+        }
+        if (!formData.service_provider_vendor_id) {
+          toast.error('Service provider is required');
           return false;
         }
         if (!formData.service_description) {

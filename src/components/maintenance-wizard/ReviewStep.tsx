@@ -28,6 +28,9 @@ export const ReviewStep = ({ formData, setFormData }: ReviewStepProps) => {
     enabled: !!formData.vehicle_id
   });
 
+
+  const lineItemsTotal = formData.line_items.reduce((sum, item) => sum + item.total_price, 0);
+
   const { data: vendor } = useQuery({
     queryKey: ['vendor', formData.service_provider_vendor_id],
     queryFn: async () => {
@@ -43,8 +46,6 @@ export const ReviewStep = ({ formData, setFormData }: ReviewStepProps) => {
     },
     enabled: !!formData.service_provider_vendor_id
   });
-
-  const lineItemsTotal = formData.line_items.reduce((sum, item) => sum + item.total_price, 0);
 
   return (
     <div className="space-y-6">
