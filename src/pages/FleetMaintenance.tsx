@@ -7,14 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Download, Calendar, DollarSign, Wrench, FileCheck, FileX } from "lucide-react";
 import { format } from "date-fns";
 import { MaintenanceDetailDialog } from "@/components/fleet/MaintenanceDetailDialog";
-import AddMaintenanceDialog from "@/components/AddMaintenanceDialog";
+import { AddMaintenanceWizard } from "@/components/AddMaintenanceWizard";
 
 export default function FleetMaintenance() {
   const [selectedVehicle, setSelectedVehicle] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState<string>("all");
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [addDialogVehicleId, setAddDialogVehicleId] = useState<string>("");
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
@@ -113,7 +112,7 @@ export default function FleetMaintenance() {
           <h1 className="text-3xl font-bold">Fleet Maintenance</h1>
           <p className="text-muted-foreground">Track and manage all vehicle maintenance records</p>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)} size="lg">
+        <Button onClick={() => setWizardOpen(true)} size="lg">
           <Plus className="h-5 w-5 mr-2" />
           Add Maintenance
         </Button>
@@ -310,12 +309,7 @@ export default function FleetMaintenance() {
                 ? 'Try adjusting your filters'
                 : 'Get started by adding your first maintenance record'}
             </p>
-            <Button onClick={() => {
-              if (vehicles && vehicles.length > 0) {
-                setAddDialogVehicleId(vehicles[0].id);
-                setAddDialogOpen(true);
-              }
-            }}>
+            <Button onClick={() => setWizardOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Maintenance Record
             </Button>
@@ -324,16 +318,10 @@ export default function FleetMaintenance() {
       </div>
 
       {/* Dialogs */}
-      {addDialogVehicleId && (
-        <AddMaintenanceDialog
-          open={addDialogOpen}
-          onOpenChange={setAddDialogOpen}
-          vehicleId={addDialogVehicleId}
-          onMaintenanceAdded={() => {
-            // Refetch data handled by query invalidation
-          }}
-        />
-      )}
+      <AddMaintenanceWizard
+        isOpen={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+      />
 
       {selectedRecord && (
         <MaintenanceDetailDialog
