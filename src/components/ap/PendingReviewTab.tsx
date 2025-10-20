@@ -9,6 +9,7 @@ import { AlertCircle, CheckCircle, XCircle, Eye, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { ReceiptUploadModal } from "./ReceiptUploadModal";
 
 interface PendingExpense {
   id: string;
@@ -41,6 +42,8 @@ export function PendingReviewTab({ onViewDetails, onUploadReceipt }: PendingRevi
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<PendingExpense | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [expenseForReceipt, setExpenseForReceipt] = useState<string | null>(null);
 
   const { data: pendingExpenses, isLoading } = useQuery({
     queryKey: ['expenses', 'pending-review'],
@@ -245,9 +248,12 @@ export function PendingReviewTab({ onViewDetails, onUploadReceipt }: PendingRevi
                     View Details
                   </Button>
                 )}
-                {!expense.has_receipt && expense.receipt_required && onUploadReceipt && (
+                {!expense.has_receipt && expense.receipt_required && (
                   <Button
-                    onClick={() => onUploadReceipt(expense.id)}
+                    onClick={() => {
+                      setExpenseForReceipt(expense.id);
+                      setShowReceiptUpload(true);
+                    }}
                     variant="outline"
                     size="sm"
                     className="text-orange-600 border-orange-300"
@@ -314,6 +320,18 @@ export function PendingReviewTab({ onViewDetails, onUploadReceipt }: PendingRevi
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {expenseForReceipt && (
+        <ReceiptUploadModal
+          open={showReceiptUpload}
+          onOpenChange={setShowReceiptUpload}
+          expenseId={expenseForReceipt}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['expenses'] });
+            setExpenseForReceipt(null);
+          }}
+        />
+      )}
     </>
   );
 }

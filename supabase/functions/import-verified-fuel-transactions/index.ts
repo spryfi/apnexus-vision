@@ -37,11 +37,27 @@ serve(async (req) => {
     console.log('Creating Supabase client...');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { transactions }: { transactions: VerifiedTransaction[] } = await req.json();
+    const { transactions, createExpenseTransactions, statementId }: { 
+      transactions: VerifiedTransaction[], 
+      createExpenseTransactions?: boolean,
+      statementId?: string 
+    } = await req.json();
+    
     console.log('Received transactions for import:', transactions.length);
+    console.log('Create expense transactions:', createExpenseTransactions);
+    console.log('Statement ID:', statementId);
+
+    // Get the current user from the auth header
+    const authHeader = req.headers.get('Authorization');
+    let userId = null;
+    
+    if (authHeader) {
+      const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+      userId = user?.id;
+    }
 
     // Insert fuel transactions
-    const { error: insertError } = await supabase
+    const { data: insertedFuelTransactions, error: insertError } = await supabase
       .from('fuel_transactions_new')
       .insert(transactions.map(t => ({
         source_transaction_id: t.source_transaction_id,
@@ -56,14 +72,66 @@ serve(async (req) => {
         status: t.status,
         flag_reason: t.flag_reason,
         transaction_type: t.transaction_type
-      })));
+      })))
+      .select();
 
     if (insertError) {
       console.error('Error inserting transactions:', insertError);
       throw insertError;
     }
 
-    console.log('Successfully inserted transactions');
+    console.log('Successfully inserted fuel transactions');
+
+    // Create expense transactions if requested
+    let expenseCount = 0;
+    if (createExpenseTransactions && insertedFuelTransactions) {
+      console.log('Creating expense transactions for fuel purchases...');
+      
+      const expenseTransactions = insertedFuelTransactions
+        .filter(ft => ft.status === 'verified' || ft.status === 'flagged')
+        .map(ft => ({
+          transaction_date: ft.transaction_date,
+          expense_type: 'fuel_purchase',
+          amount: ft.total_cost,
+          description: `Fuel - ${ft.merchant_name}${ft.vehicle_id ? ` - ${ft.vehicle_id}` : ' - Unmatched'}`,
+          vendor_name: ft.merchant_name,
+          invoice_number: ft.source_transaction_id || statementId,
+          fuel_statement_id: statementId,
+          receipt_url: null,
+          has_receipt: false,
+          receipt_required: true,
+          payment_status: 'paid',
+          approval_status: ft.status === 'verified' ? 'auto_approved' : 'pending_review',
+          approved_at: ft.status === 'verified' ? new Date().toISOString() : null,
+          approved_by: ft.status === 'verified' ? userId : null,
+          created_by: userId,
+          flagged_for_review: ft.status === 'flagged',
+          flag_reason: ft.flag_reason || null
+        }));
+
+      const { data: insertedExpenses, error: expenseError } = await supabase
+        .from('expense_transactions')
+        .insert(expenseTransactions)
+        .select();
+
+      if (expenseError) {
+        console.error('Error creating expense transactions:', expenseError);
+      } else {
+        expenseCount = insertedExpenses?.length || 0;
+        console.log(`Created ${expenseCount} expense transactions`);
+      }
+
+      // Update fuel statement status if applicable
+      if (statementId) {
+        await supabase
+          .from('fuel_statements')
+          .update({
+            status: 'Imported to AP',
+            ai_processing_notes: `${expenseCount} transactions imported to Accounts Payable`
+          })
+          .eq('id', statementId);
+      }
+    }
 
     // Update vehicle odometers - ONLY for Fleet Vehicle transactions
     const odometerUpdates: Array<{ vehicleId: string; odometer: number }> = [];
@@ -112,7 +180,8 @@ serve(async (req) => {
     const result = {
       success: true,
       transactionsImported: transactions.length,
-      odometerUpdates: odometerUpdates.length
+      odometerUpdates: odometerUpdates.length,
+      expenseTransactionsCreated: expenseCount
     };
 
     console.log('Import completed successfully:', result);
