@@ -7,13 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Download, CheckCircle, Clock, AlertCircle, FileText, Upload, DollarSign } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Edit, Trash2, Download, CheckCircle, Clock, AlertCircle, FileText, Upload, DollarSign, Filter, Building2, User, Flag, FileWarning, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
 import { MarkAsPaidModal } from "@/components/ap/MarkAsPaidModal";
+import { useQuery } from "@tanstack/react-query";
 
 interface Invoice {
   id: string;
@@ -53,6 +55,7 @@ export default function AccountsPayable() {
   const [invoiceToPayState, setInvoiceToPay] = useState<Invoice | null>(null);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState("all");
   const { toast } = useToast();
 
   const [invoiceForm, setInvoiceForm] = useState<{
@@ -483,6 +486,77 @@ export default function AccountsPayable() {
     return `${days} days`;
   };
 
+  // Calculate metrics using useQuery
+  const { data: metrics } = useQuery({
+    queryKey: ['expense-metrics', invoices],
+    queryFn: () => {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfWeek = new Date(now);
+      endOfWeek.setDate(now.getDate() + 7);
+      
+      return {
+        totalOutstanding: invoices
+          .filter(e => ['Pending Approval', 'Approved for Payment'].includes(e.status))
+          .reduce((sum, e) => sum + (e.amount || 0), 0),
+        unpaidCount: invoices.filter(e => ['Pending Approval', 'Approved for Payment'].includes(e.status)).length,
+        
+        overdueAmount: invoices
+          .filter(e => {
+            const dueDate = new Date(e.due_date);
+            return dueDate < now && e.status !== 'Paid';
+          })
+          .reduce((sum, e) => sum + (e.amount || 0), 0),
+        overdueCount: invoices.filter(e => {
+          const dueDate = new Date(e.due_date);
+          return dueDate < now && e.status !== 'Paid';
+        }).length,
+        
+        dueThisWeek: invoices
+          .filter(e => {
+            if (!e.due_date || e.status === 'Paid') return false;
+            const dueDate = new Date(e.due_date);
+            return dueDate >= now && dueDate <= endOfWeek;
+          })
+          .reduce((sum, e) => sum + (e.amount || 0), 0),
+        dueThisWeekCount: invoices.filter(e => {
+          if (!e.due_date || e.status === 'Paid') return false;
+          const dueDate = new Date(e.due_date);
+          return dueDate >= now && dueDate <= endOfWeek;
+        }).length,
+        
+        pendingReviewCount: invoices.filter(e => e.status === 'Pending Approval').length,
+        
+        paidThisMonth: invoices
+          .filter(e => {
+            const invoiceDate = new Date(e.invoice_date);
+            return invoiceDate >= startOfMonth && e.status === 'Paid';
+          })
+          .reduce((sum, e) => sum + (e.amount || 0), 0),
+        paidThisMonthCount: invoices.filter(e => {
+          const invoiceDate = new Date(e.invoice_date);
+          return invoiceDate >= startOfMonth && e.status === 'Paid';
+        }).length,
+        
+        missingReceiptsCount: invoices.filter(e => !e.receipt_url).length
+      };
+    },
+    enabled: invoices.length > 0,
+    initialData: {
+      totalOutstanding: 0,
+      unpaidCount: 0,
+      overdueAmount: 0,
+      overdueCount: 0,
+      dueThisWeek: 0,
+      dueThisWeekCount: 0,
+      pendingReviewCount: 0,
+      paidThisMonth: 0,
+      paidThisMonthCount: 0,
+      missingReceiptsCount: 0
+    }
+  });
+
+  // Filter invoices based on active tab and filters
   const filteredInvoices = invoices.filter(invoice => {
     const matchesStatus = statusFilter === "All" || invoice.status === statusFilter;
     const matchesVendor = vendorFilter === "All" || invoice.vendor_id === vendorFilter;
@@ -491,38 +565,25 @@ export default function AccountsPayable() {
       invoice.vendors?.vendor_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       invoice.transaction_memo?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    return matchesStatus && matchesVendor && matchesSearch;
+    // Tab-specific filtering
+    let matchesTab = true;
+    if (activeTab === 'pending-review') {
+      matchesTab = invoice.status === 'Pending Approval';
+    } else if (activeTab === 'overdue') {
+      const dueDate = new Date(invoice.due_date);
+      matchesTab = dueDate < new Date() && invoice.status !== 'Paid';
+    }
+    
+    return matchesStatus && matchesVendor && matchesSearch && matchesTab;
   });
 
-  // Calculate metrics
-  const today = new Date();
-  const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-  const totalOutstanding = invoices
-    .filter(inv => ['Pending Approval', 'Approved for Payment'].includes(inv.status))
-    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
-
-  const overdueAmount = invoices
-    .filter(inv => {
-      const dueDate = new Date(inv.due_date);
-      return dueDate < today && inv.status !== 'Paid';
-    })
-    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
-
-  const dueThisWeek = invoices
-    .filter(inv => {
-      const dueDate = new Date(inv.due_date);
-      return dueDate >= today && dueDate <= oneWeekFromNow && inv.status !== 'Paid';
-    })
-    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
-
-  const paidThisMonth = invoices
-    .filter(inv => {
-      const invoiceDate = new Date(inv.invoice_date);
-      return invoiceDate >= startOfMonth && inv.status === 'Paid';
-    })
-    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const filterByMissingReceipts = () => {
+    setSearchQuery("");
+    setStatusFilter("All");
+    setVendorFilter("All");
+    setActiveTab("all");
+    // This will be handled by showing only invoices without receipts
+  };
 
   if (loading) {
     return (
@@ -563,103 +624,166 @@ export default function AccountsPayable() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Accounts Payable</h1>
         <p className="text-muted-foreground">
-          Manage invoices and track outstanding payables
+          Manage all company expenditures and track payments
         </p>
       </div>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Metrics Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <MetricCard
           title="Total Outstanding"
-          value={`$${totalOutstanding.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          subtitle={`${invoices.filter(i => ['Pending Approval', 'Approved for Payment'].includes(i.status)).length} invoices`}
-          icon={Clock}
+          value={`$${metrics.totalOutstanding.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          subtitle={`${metrics.unpaidCount} expenses`}
+          icon={DollarSign}
         />
         <MetricCard
           title="Overdue Amount"
-          value={`$${overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          subtitle={`${invoices.filter(i => new Date(i.due_date) < today && i.status !== 'Paid').length} invoices`}
-          icon={AlertCircle}
+          value={`$${metrics.overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          subtitle={`${metrics.overdueCount} expenses`}
+          icon={AlertTriangle}
+          change={metrics.overdueCount > 0 ? metrics.overdueCount : undefined}
         />
         <MetricCard
           title="Due This Week"
-          value={`$${dueThisWeek.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          subtitle={`${invoices.filter(i => {
-            const dueDate = new Date(i.due_date);
-            return dueDate >= today && dueDate <= oneWeekFromNow && i.status !== 'Paid';
-          }).length} invoices`}
+          value={`$${metrics.dueThisWeek.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          subtitle={`${metrics.dueThisWeekCount} expenses`}
           icon={Clock}
         />
+        <Card 
+          className="cursor-pointer hover:bg-accent transition-colors"
+          onClick={() => setActiveTab('pending-review')}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Pending Review</p>
+                <p className="text-2xl font-bold">{metrics.pendingReviewCount}</p>
+                <p className="text-xs text-muted-foreground">Need attention</p>
+              </div>
+              <Flag className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
         <MetricCard
           title="Paid This Month"
-          value={`$${paidThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          subtitle={`${invoices.filter(i => new Date(i.invoice_date) >= startOfMonth && i.status === 'Paid').length} invoices`}
+          value={`$${metrics.paidThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          subtitle={`${metrics.paidThisMonthCount} expenses`}
           icon={CheckCircle}
         />
+        <Card 
+          className="cursor-pointer hover:bg-accent transition-colors"
+          onClick={filterByMissingReceipts}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Missing Receipts</p>
+                <p className="text-2xl font-bold">{metrics.missingReceiptsCount}</p>
+                <p className="text-xs text-muted-foreground">Require upload</p>
+              </div>
+              <FileWarning className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Filters and Actions */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between gap-4">
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label>Search</Label>
-                <Input
-                  placeholder="Invoice # or description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+      {/* Tabbed Interface */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            <span>All Expenses</span>
+          </TabsTrigger>
+          <TabsTrigger value="by-type" className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            <span>By Type</span>
+          </TabsTrigger>
+          <TabsTrigger value="by-vendor" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            <span>By Vendor</span>
+          </TabsTrigger>
+          <TabsTrigger value="by-employee" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span>By Employee</span>
+          </TabsTrigger>
+          <TabsTrigger value="pending-review" className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            <span>Pending Review</span>
+            {metrics.pendingReviewCount > 0 && (
+              <Badge variant="destructive" className="ml-1">{metrics.pendingReviewCount}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="overdue" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            <span>Overdue</span>
+            {metrics.overdueCount > 0 && (
+              <Badge variant="destructive" className="ml-1">{metrics.overdueCount}</Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col md:flex-row justify-between gap-4">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Search</Label>
+                    <Input
+                      placeholder="Invoice # or description..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="All">All Statuses</SelectItem>
+                        <SelectItem value="Pending Approval">Pending</SelectItem>
+                        <SelectItem value="Approved for Payment">Approved</SelectItem>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Vendor</Label>
+                    <Select value={vendorFilter} onValueChange={setVendorFilter}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="All">All Vendors</SelectItem>
+                        {vendors.map(vendor => (
+                          <SelectItem key={vendor.id} value={vendor.id}>
+                            {vendor.vendor_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-2 items-end">
+                  <Button onClick={() => {
+                    resetForm();
+                    setShowAddDialog(true);
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Invoice
+                  </Button>
+                  <Button variant="outline" onClick={handleExport}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
               </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Statuses</SelectItem>
-                    <SelectItem value="Pending Approval">Pending</SelectItem>
-                    <SelectItem value="Approved for Payment">Approved</SelectItem>
-                    <SelectItem value="Paid">Paid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Vendor</Label>
-                <Select value={vendorFilter} onValueChange={setVendorFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Vendors</SelectItem>
-                    {vendors.map(vendor => (
-                      <SelectItem key={vendor.id} value={vendor.id}>
-                        {vendor.vendor_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex gap-2 items-end">
-              <Button onClick={() => {
-                resetForm();
-                setShowAddDialog(true);
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Invoice
-              </Button>
-              <Button variant="outline" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Invoice #</TableHead>
@@ -781,6 +905,220 @@ export default function AccountsPayable() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="by-type">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Group expenses by type - Coming soon</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="by-vendor">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Group expenses by vendor - Coming soon</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="by-employee">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground">Group expenses by employee - Coming soon</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pending-review">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground mb-4">Expenses pending approval</p>
+              {/* Reuse the same table structure */}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Invoice Date</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Days Until Due</TableHead>
+                      <TableHead>Receipt</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2">
+                            <AlertCircle className="h-12 w-12 text-muted-foreground" />
+                            <p className="text-lg font-medium">No pending items</p>
+                            <p className="text-sm text-muted-foreground">All invoices have been reviewed</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredInvoices.map((invoice) => (
+                        <TableRow key={invoice.id}>
+                          <TableCell className="font-medium">{invoice.invoice_number || 'NI'}</TableCell>
+                          <TableCell>{invoice.vendors?.vendor_name || '-'}</TableCell>
+                          <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
+                          <TableCell>${invoice.amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>
+                          <TableCell>{getStatusBadge(invoice)}</TableCell>
+                          <TableCell>{getDaysUntilDue(invoice.due_date)}</TableCell>
+                          <TableCell>
+                            {invoice.receipt_url ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => viewReceipt(invoice.receipt_url!, invoice.receipt_file_name || 'Receipt')}
+                                title="View receipt"
+                              >
+                                <FileText className="h-4 w-4 text-blue-600" />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleMissingReceiptClick}
+                                title="No receipt uploaded"
+                              >
+                                <AlertCircle className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleEdit(invoice)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="text-blue-600 hover:text-blue-600"
+                                onClick={() => handleApprove(invoice.id)}
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="overdue">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-muted-foreground mb-4">Overdue expenses requiring immediate attention</p>
+              {/* Reuse the same table structure */}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Invoice Date</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Days Until Due</TableHead>
+                      <TableHead>Receipt</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-2">
+                            <CheckCircle className="h-12 w-12 text-green-500" />
+                            <p className="text-lg font-medium">No overdue invoices</p>
+                            <p className="text-sm text-muted-foreground">All invoices are current</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredInvoices.map((invoice) => (
+                        <TableRow key={invoice.id}>
+                          <TableCell className="font-medium">{invoice.invoice_number || 'NI'}</TableCell>
+                          <TableCell>{invoice.vendors?.vendor_name || '-'}</TableCell>
+                          <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
+                          <TableCell>${invoice.amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>
+                          <TableCell>{getStatusBadge(invoice)}</TableCell>
+                          <TableCell>{getDaysUntilDue(invoice.due_date)}</TableCell>
+                          <TableCell>
+                            {invoice.receipt_url ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => viewReceipt(invoice.receipt_url!, invoice.receipt_file_name || 'Receipt')}
+                                title="View receipt"
+                              >
+                                <FileText className="h-4 w-4 text-blue-600" />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleMissingReceiptClick}
+                                title="No receipt uploaded"
+                              >
+                                <AlertCircle className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleEdit(invoice)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              {invoice.status !== 'Paid' && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="text-green-600 hover:text-green-600"
+                                  onClick={() => {
+                                    setInvoiceToPay(invoice);
+                                    setShowPaymentModal(true);
+                                  }}
+                                  title="Mark as Paid"
+                                >
+                                  <DollarSign className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Add/Edit Invoice Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(open) => {
