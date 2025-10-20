@@ -1,12 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, ExternalLink, Eye } from "lucide-react";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { ExternalLink, Eye } from "lucide-react";
+import { useState } from "react";
 import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
 
 interface MaintenanceLineItem {
@@ -40,38 +37,10 @@ export function MaintenanceDetailDialog({
   maintenanceId,
   maintenanceData 
 }: MaintenanceDetailDialogProps) {
-  const [lineItems, setLineItems] = useState<MaintenanceLineItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
 
-  useEffect(() => {
-    if (open && maintenanceId) {
-      fetchLineItems();
-    }
-  }, [open, maintenanceId]);
-
-  const fetchLineItems = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('maintenance_line_items')
-        .select('*')
-        .eq('maintenance_record_id', maintenanceId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setLineItems(data || []);
-    } catch (error) {
-      console.error('Error fetching line items:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load service line items",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Get line items from the maintenance data passed from parent
+  const lineItems = (maintenanceData as any).maintenance_line_items || [];
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -156,11 +125,7 @@ export function MaintenanceDetailDialog({
                 <CardTitle className="text-lg">Service Line Items</CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Loading line items...</p>
-                  </div>
-                ) : lineItems.length === 0 ? (
+                {lineItems.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">No detailed line items recorded for this service.</p>
                     <p className="text-sm text-muted-foreground mt-2">Only summary information is available.</p>

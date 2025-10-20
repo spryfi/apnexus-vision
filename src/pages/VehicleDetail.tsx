@@ -93,13 +93,21 @@ const VehicleDetail: React.FC = () => {
       if (vehicleError) throw vehicleError;
       setVehicle(vehicleData);
 
-      // Fetch maintenance records
+      // Fetch maintenance records with line items
       const { data: maintenanceData, error: maintenanceError } = await supabase
         .from('maintenance_records')
         .select(`
           *,
           vendors (
             vendor_name
+          ),
+          maintenance_line_items (
+            id,
+            description,
+            part_number,
+            quantity,
+            unit_price,
+            total_price
           )
         `)
         .eq('vehicle_id', id)
