@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Edit, Trash2, Download, CheckCircle, Clock, AlertCircle, FileText, Upload, DollarSign, Filter, Building2, User, Flag, FileWarning, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Download, CheckCircle, Clock, AlertCircle, FileText, Upload, DollarSign, Filter, Building2, User, Flag, FileWarning, AlertTriangle, Eye, UserCheck, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,37 @@ import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
 import { MarkAsPaidModal } from "@/components/ap/MarkAsPaidModal";
 import { AddExpenseWizard } from "@/components/ap/AddExpenseWizard";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+
+
+interface ExpenseTransaction {
+  id: string;
+  expense_type: string;
+  transaction_date: string;
+  amount: number;
+  description: string;
+  vendor_id?: string;
+  vendors?: { vendor_name: string };
+  employee_id?: string;
+  employees_enhanced?: { full_name: string };
+  category_id?: string;
+  expense_categories?: { category_name: string };
+  invoice_number?: string;
+  check_number?: string;
+  payment_method?: string;
+  payment_status: string;
+  approval_status: string;
+  due_date?: string;
+  days_until_due?: number;
+  is_overdue?: boolean;
+  receipt_url?: string;
+  receipt_required: boolean;
+  has_receipt: boolean;
+  notes?: string;
+  created_at: string;
+  approved_by?: string;
+  approved_at?: string;
+}
 
 interface Invoice {
   id: string;
@@ -42,6 +73,7 @@ interface Vendor {
 }
 
 export default function AccountsPayable() {
+  const [expenses, setExpenses] = useState<ExpenseTransaction[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [employees, setEmployees] = useState<{ id: string; full_name: string }[]>([]);
