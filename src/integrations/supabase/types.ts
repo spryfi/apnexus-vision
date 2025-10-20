@@ -1517,6 +1517,162 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_transactions: {
+        Row: {
+          amount: number
+          approval_notes: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          attachments: Json | null
+          category_id: string | null
+          check_number: string | null
+          created_at: string
+          created_by: string
+          credit_card_id: string | null
+          days_until_due: number | null
+          description: string
+          due_date: string | null
+          employee_id: string | null
+          expense_type: string
+          flag_reason: string | null
+          flagged_for_review: boolean | null
+          fuel_statement_id: string | null
+          has_receipt: boolean | null
+          id: string
+          invoice_number: string | null
+          is_overdue: boolean | null
+          notes: string | null
+          payment_confirmation_url: string | null
+          payment_date: string | null
+          payment_method: string | null
+          payment_status: string
+          receipt_required: boolean | null
+          receipt_uploaded_at: string | null
+          receipt_uploaded_by: string | null
+          receipt_url: string | null
+          transaction_date: string
+          updated_at: string
+          updated_by: string | null
+          vendor_id: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          amount: number
+          approval_notes?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          attachments?: Json | null
+          category_id?: string | null
+          check_number?: string | null
+          created_at?: string
+          created_by: string
+          credit_card_id?: string | null
+          days_until_due?: number | null
+          description: string
+          due_date?: string | null
+          employee_id?: string | null
+          expense_type: string
+          flag_reason?: string | null
+          flagged_for_review?: boolean | null
+          fuel_statement_id?: string | null
+          has_receipt?: boolean | null
+          id?: string
+          invoice_number?: string | null
+          is_overdue?: boolean | null
+          notes?: string | null
+          payment_confirmation_url?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          receipt_required?: boolean | null
+          receipt_uploaded_at?: string | null
+          receipt_uploaded_by?: string | null
+          receipt_url?: string | null
+          transaction_date: string
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          amount?: number
+          approval_notes?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          attachments?: Json | null
+          category_id?: string | null
+          check_number?: string | null
+          created_at?: string
+          created_by?: string
+          credit_card_id?: string | null
+          days_until_due?: number | null
+          description?: string
+          due_date?: string | null
+          employee_id?: string | null
+          expense_type?: string
+          flag_reason?: string | null
+          flagged_for_review?: boolean | null
+          fuel_statement_id?: string | null
+          has_receipt?: boolean | null
+          id?: string
+          invoice_number?: string | null
+          is_overdue?: boolean | null
+          notes?: string | null
+          payment_confirmation_url?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          receipt_required?: boolean | null
+          receipt_uploaded_at?: string | null
+          receipt_uploaded_by?: string | null
+          receipt_url?: string | null
+          transaction_date?: string
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_transactions_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_transactions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_transactions_fuel_statement_id_fkey"
+            columns: ["fuel_statement_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_statements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_transactions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flagged_transactions: {
         Row: {
           flag_reason: string
