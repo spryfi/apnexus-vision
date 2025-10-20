@@ -14,6 +14,7 @@ import { VehicleFuelStats } from "@/components/fleet/VehicleFuelStats";
 import { VehicleFuelTrendChart } from "@/components/fleet/VehicleFuelTrendChart";
 import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
 import { VehicleCostSummary } from "@/components/fleet/VehicleCostSummary";
+import { MaintenanceDetailDialog } from "@/components/fleet/MaintenanceDetailDialog";
 
 interface Vehicle {
   id: string;
@@ -71,6 +72,8 @@ const VehicleDetail: React.FC = () => {
   const [showAddMaintenanceDialog, setShowAddMaintenanceDialog] = useState(false);
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<{ url: string; fileName: string } | null>(null);
+  const [showMaintenanceDetail, setShowMaintenanceDetail] = useState(false);
+  const [selectedMaintenance, setSelectedMaintenance] = useState<MaintenanceRecord | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -320,7 +323,14 @@ const VehicleDetail: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {maintenanceRecords.map((record) => (
-                      <TableRow key={record.id}>
+                      <TableRow 
+                        key={record.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setSelectedMaintenance(record);
+                          setShowMaintenanceDetail(true);
+                        }}
+                      >
                         <TableCell>{new Date(record.service_date).toLocaleDateString()}</TableCell>
                         <TableCell className="max-w-xs">
                           <div className="truncate" title={record.service_description}>
@@ -332,7 +342,18 @@ const VehicleDetail: React.FC = () => {
                         <TableCell>{record.odometer_at_service.toLocaleString()}</TableCell>
                         <TableCell>
                           {record.receipt_scan_url ? (
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedReceipt({ 
+                                  url: record.receipt_scan_url!, 
+                                  fileName: `Maintenance-${record.id}.pdf` 
+                                });
+                                setShowReceiptViewer(true);
+                              }}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                           ) : (
@@ -614,6 +635,16 @@ const VehicleDetail: React.FC = () => {
           onOpenChange={setShowReceiptViewer}
           receiptUrl={selectedReceipt.url}
           receiptFileName={selectedReceipt.fileName}
+        />
+      )}
+
+      {/* Maintenance Detail Modal */}
+      {selectedMaintenance && (
+        <MaintenanceDetailDialog
+          open={showMaintenanceDetail}
+          onOpenChange={setShowMaintenanceDetail}
+          maintenanceId={selectedMaintenance.id}
+          maintenanceData={selectedMaintenance}
         />
       )}
     </div>
