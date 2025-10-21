@@ -876,7 +876,11 @@ export default function AccountsPayable() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => viewReceipt(invoice.receipt_url!, invoice.receipt_file_name || 'Receipt')}
+                            onClick={() => {
+                              if (invoice.receipt_url) {
+                                viewReceipt(invoice.receipt_url, invoice.receipt_file_name || 'Receipt');
+                              }
+                            }}
                             title="View receipt"
                           >
                             <FileText className="h-4 w-4 text-blue-600" />
@@ -1030,7 +1034,11 @@ export default function AccountsPayable() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => viewReceipt(invoice.receipt_url!, invoice.receipt_file_name || 'Receipt')}
+                                onClick={() => {
+                                  if (invoice.receipt_url) {
+                                    viewReceipt(invoice.receipt_url, invoice.receipt_file_name || 'Receipt');
+                                  }
+                                }}
                                 title="View receipt"
                               >
                                 <FileText className="h-4 w-4 text-blue-600" />
@@ -1121,7 +1129,11 @@ export default function AccountsPayable() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => viewReceipt(invoice.receipt_url!, invoice.receipt_file_name || 'Receipt')}
+                                onClick={() => {
+                                  if (invoice.receipt_url) {
+                                    viewReceipt(invoice.receipt_url, invoice.receipt_file_name || 'Receipt');
+                                  }
+                                }}
                                 title="View receipt"
                               >
                                 <FileText className="h-4 w-4 text-blue-600" />
