@@ -1,31 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, DollarSign, Gauge, Wrench } from "lucide-react";
-import { MaintenanceFormData } from "../AddMaintenanceWizard";
 
 interface ServiceDetailsStepProps {
-  formData: MaintenanceFormData;
-  setFormData: (data: MaintenanceFormData) => void;
+  formData: any;
+  setFormData: (data: any) => void;
 }
 
 export const ServiceDetailsStep = ({ formData, setFormData }: ServiceDetailsStepProps) => {
-  const { data: vendors } = useQuery({
-    queryKey: ['vendors'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('id, vendor_name')
-        .order('vendor_name');
-      
-      if (error) throw error;
-      return data;
-    }
-  });
-
   return (
     <div className="space-y-6">
       <div>
@@ -62,8 +45,8 @@ export const ServiceDetailsStep = ({ formData, setFormData }: ServiceDetailsStep
             id="odometer"
             type="number"
             placeholder="156932"
-            value={formData.odometer_at_service || ''}
-            onChange={(e) => setFormData({ ...formData, odometer_at_service: e.target.value ? parseInt(e.target.value) : null })}
+            value={formData.odometer || ''}
+            onChange={(e) => setFormData({ ...formData, odometer: e.target.value ? parseInt(e.target.value) : null })}
           />
           <p className="text-xs text-muted-foreground mt-1">
             Miles at time of service
@@ -75,26 +58,15 @@ export const ServiceDetailsStep = ({ formData, setFormData }: ServiceDetailsStep
       <div>
         <Label htmlFor="provider" className="flex items-center gap-2">
           <Wrench className="h-4 w-4" />
-          Service Provider <span className="text-red-500">*</span>
+          Service Provider / Shop <span className="text-red-500">*</span>
         </Label>
-        <Select
-          value={formData.service_provider_vendor_id}
-          onValueChange={(value) => setFormData({ ...formData, service_provider_vendor_id: value })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select vendor" />
-          </SelectTrigger>
-          <SelectContent>
-            {vendors?.map((vendor) => (
-              <SelectItem key={vendor.id} value={vendor.id}>
-                {vendor.vendor_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground mt-1">
-          Select from existing vendors
-        </p>
+        <Input
+          id="provider"
+          placeholder="e.g., Mavericks Auto Shop, South Point Dealership"
+          value={formData.provider}
+          onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
+          required
+        />
       </div>
 
       {/* Description */}
@@ -105,8 +77,8 @@ export const ServiceDetailsStep = ({ formData, setFormData }: ServiceDetailsStep
         <Textarea
           id="description"
           placeholder="e.g., Oil change, tire rotation, brake pad replacement..."
-          value={formData.service_description}
-          onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           rows={3}
           required
         />
