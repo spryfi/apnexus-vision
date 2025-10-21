@@ -2,8 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Eye } from "lucide-react";
-import { useState } from "react";
+import { ExternalLink, Eye, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 import { ReceiptViewerModal } from "@/components/ap/ReceiptViewerModal";
 
 interface MaintenanceLineItem {
@@ -39,8 +39,23 @@ export function MaintenanceDetailDialog({
 }: MaintenanceDetailDialogProps) {
   const [showReceiptViewer, setShowReceiptViewer] = useState(false);
 
-  // Get line items from the maintenance data passed from parent
-  const lineItems = (maintenanceData as any).maintenance_line_items || [];
+  // Safely get line items from the maintenance data
+  const lineItems = Array.isArray((maintenanceData as any)?.maintenance_line_items) 
+    ? (maintenanceData as any).maintenance_line_items 
+    : [];
+
+  // Debug logging in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('MaintenanceDetailDialog - Data received:', {
+        maintenanceId,
+        hasMaintenanceData: !!maintenanceData,
+        lineItemsCount: lineItems.length,
+        lineItems: lineItems,
+        rawData: maintenanceData
+      });
+    }
+  }, [maintenanceId, maintenanceData, lineItems]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -105,7 +120,12 @@ export function MaintenanceDetailDialog({
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Odometer Reading</p>
-                    <p className="text-base font-semibold">{maintenanceData.odometer_at_service.toLocaleString()} miles</p>
+                    <p className="text-base font-semibold">
+                      {maintenanceData.odometer_at_service 
+                        ? `${maintenanceData.odometer_at_service.toLocaleString()} miles`
+                        : 'Not recorded'
+                      }
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total Cost</p>
@@ -125,10 +145,16 @@ export function MaintenanceDetailDialog({
                 <CardTitle className="text-lg">Service Line Items</CardTitle>
               </CardHeader>
               <CardContent>
-                {lineItems.length === 0 ? (
+                {!lineItems || lineItems.length === 0 ? (
                   <div className="text-center py-8">
+                    <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                     <p className="text-muted-foreground">No detailed line items recorded for this service.</p>
                     <p className="text-sm text-muted-foreground mt-2">Only summary information is available.</p>
+                    {process.env.NODE_ENV === 'development' && (
+                      <p className="text-xs text-muted-foreground mt-4 font-mono">
+                        Debug: Line items array is {lineItems ? `empty (length: ${lineItems.length})` : 'null/undefined'}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -145,11 +171,11 @@ export function MaintenanceDetailDialog({
                       <TableBody>
                         {lineItems.map((item) => (
                           <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.description}</TableCell>
+                            <TableCell className="font-medium">{item.description || 'N/A'}</TableCell>
                             <TableCell className="text-muted-foreground">{item.part_number || '-'}</TableCell>
-                            <TableCell className="text-right">{item.quantity}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                            <TableCell className="text-right font-semibold">{formatCurrency(item.total_price)}</TableCell>
+                            <TableCell className="text-right">{item.quantity || 0}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.unit_price || 0)}</TableCell>
+                            <TableCell className="text-right font-semibold">{formatCurrency(item.total_price || 0)}</TableCell>
                           </TableRow>
                         ))}
                         <TableRow className="bg-muted/50">
