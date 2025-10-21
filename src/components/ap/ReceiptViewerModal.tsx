@@ -16,20 +16,39 @@ export function ReceiptViewerModal({ open, onOpenChange, receiptUrl, receiptFile
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [error, setError] = useState(false);
-  const isPdf = receiptFileName?.toLowerCase().endsWith('.pdf');
+  
+  // Safety checks
+  if (!receiptUrl) {
+    return null;
+  }
+  
+  const isPdf = receiptUrl?.toLowerCase().endsWith('.pdf') || receiptFileName?.toLowerCase().endsWith('.pdf');
 
   const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = receiptUrl;
-    link.download = receiptFileName;
-    link.click();
+    try {
+      const link = document.createElement('a');
+      link.href = receiptUrl;
+      link.download = receiptFileName || 'receipt';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Download failed:', err);
+      window.open(receiptUrl, '_blank');
+    }
   };
 
   const handlePrint = () => {
-    const printWindow = window.open(receiptUrl, '_blank');
-    printWindow?.addEventListener('load', () => {
-      printWindow.print();
-    });
+    try {
+      const printWindow = window.open(receiptUrl, '_blank');
+      if (printWindow) {
+        printWindow.addEventListener('load', () => {
+          printWindow.print();
+        });
+      }
+    } catch (err) {
+      console.error('Print failed:', err);
+    }
   };
 
   const handleRotateLeft = () => {
@@ -144,7 +163,11 @@ export function ReceiptViewerModal({ open, onOpenChange, receiptUrl, receiptFile
                   objectFit: 'contain',
                 }}
                 className="mx-auto"
-                onError={() => setError(true)}
+                onError={(e) => {
+                  console.error('Image load failed:', receiptUrl);
+                  setError(true);
+                }}
+                onLoad={() => setError(false)}
               />
             </div>
           )}
