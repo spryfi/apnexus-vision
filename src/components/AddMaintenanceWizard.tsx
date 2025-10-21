@@ -29,9 +29,9 @@ interface LineItem {
 export interface MaintenanceFormData {
   vehicle_id: string;
   service_date: string;
-  odometer_at_service: number | null;
-  service_provider_vendor_id: string;
-  service_description: string;
+  odometer: number | null;
+  provider: string;
+  description: string;
   cost: number;
   notes: string;
   line_items: LineItem[];
@@ -44,9 +44,9 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
   const [formData, setFormData] = useState<MaintenanceFormData>({
     vehicle_id: preselectedVehicleId || '',
     service_date: new Date().toISOString().split('T')[0],
-    odometer_at_service: null,
-    service_provider_vendor_id: '',
-    service_description: '',
+    odometer: null,
+    provider: '',
+    description: '',
     cost: 0,
     notes: '',
     line_items: [],
@@ -98,11 +98,12 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
         .insert({
           vehicle_id: data.vehicle_id,
           service_date: data.service_date,
-          odometer_at_service: data.odometer_at_service,
-          service_provider_vendor_id: data.service_provider_vendor_id || null,
-          service_description: data.service_description,
+          odometer_at_service: data.odometer,
+          service_provider_vendor_id: null, // Using text provider field instead
+          service_description: data.description,
           cost: data.cost,
           receipt_scan_url: receiptUrl,
+          notes: data.notes,
           created_by: user?.id
         })
         .select()
@@ -147,9 +148,9 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
     setFormData({
       vehicle_id: preselectedVehicleId || '',
       service_date: new Date().toISOString().split('T')[0],
-      odometer_at_service: null,
-      service_provider_vendor_id: '',
-      service_description: '',
+      odometer: null,
+      provider: '',
+      description: '',
       cost: 0,
       notes: '',
       line_items: [],
@@ -178,6 +179,7 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
   const validateCurrentStep = (): boolean => {
     switch (currentStep) {
       case 1:
+        // Step 1: Vehicle Selection
         if (!formData.vehicle_id) {
           toast.error('Please select a vehicle');
           return false;
@@ -185,15 +187,16 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
         return true;
       
       case 2:
+        // Step 2: Service Details - All fields required
         if (!formData.service_date) {
           toast.error('Service date is required');
           return false;
         }
-        if (!formData.service_provider_vendor_id) {
+        if (!formData.provider || formData.provider.trim() === '') {
           toast.error('Service provider is required');
           return false;
         }
-        if (!formData.service_description) {
+        if (!formData.description || formData.description.trim() === '') {
           toast.error('Service description is required');
           return false;
         }
@@ -204,10 +207,10 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
         return true;
       
       case 3:
-        // Line items are optional, but if added, validate totals match
+        // Step 3: Line items are optional, but if added, validate totals match
         if (formData.line_items.length > 0) {
           const lineItemsTotal = formData.line_items.reduce(
-            (sum, item) => sum + item.total_price, 
+            (sum, item) => sum + (item.quantity * item.unit_price), 
             0
           );
           const costDifference = Math.abs(lineItemsTotal - formData.cost);
@@ -220,6 +223,7 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
         return true;
       
       case 4:
+        // Step 4: Receipt upload is REQUIRED
         if (!formData.receipt_file && !formData.receipt_url) {
           toast.error('Receipt upload is required for audit compliance');
           return false;
@@ -227,6 +231,19 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
         return true;
       
       case 5:
+        // Step 5: Final validation before submission
+        if (!formData.vehicle_id) {
+          toast.error('Vehicle selection is missing');
+          return false;
+        }
+        if (!formData.provider || !formData.description || formData.cost <= 0) {
+          toast.error('Please complete all required service details');
+          return false;
+        }
+        if (!formData.receipt_file && !formData.receipt_url) {
+          toast.error('Receipt is required');
+          return false;
+        }
         return true;
       
       default:
