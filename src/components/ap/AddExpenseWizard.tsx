@@ -398,13 +398,16 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
         )}
         
         {step === 2 && expenseType === 'vendor_invoice' && (
-          <VendorInvoiceForm
-            onSuccess={() => {
-              onSuccess();
-              handleClose();
-            }}
-            onCancel={() => setStep(1)}
-          />
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Vendor Invoice</h3>
+            <p className="text-muted-foreground mb-4">Form loading...</p>
+            <Button 
+              onClick={() => setStep(1)}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+          </div>
         )}
         
         {step === 2 && expenseType !== 'vendor_invoice' && (
