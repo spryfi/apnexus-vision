@@ -2,19 +2,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { Plus, Trash2, AlertCircle } from "lucide-react";
-import { MaintenanceFormData } from "../AddMaintenanceWizard";
 
 interface LineItemsStepProps {
-  formData: MaintenanceFormData;
-  setFormData: (data: MaintenanceFormData) => void;
+  formData: any;
+  setFormData: (data: any) => void;
 }
 
 export const LineItemsStep = ({ formData, setFormData }: LineItemsStepProps) => {
   const [newItem, setNewItem] = useState({
     description: '',
-    part_number: '',
     quantity: 1,
     unit_price: 0
   });
@@ -24,180 +21,161 @@ export const LineItemsStep = ({ formData, setFormData }: LineItemsStepProps) => 
       return;
     }
 
-    const total_price = newItem.quantity * newItem.unit_price;
-
     setFormData({
       ...formData,
-      line_items: [
-        ...formData.line_items,
-        {
-          ...newItem,
-          total_price
-        }
-      ]
+      line_items: [...formData.line_items, newItem]
     });
 
     setNewItem({
       description: '',
-      part_number: '',
       quantity: 1,
       unit_price: 0
     });
   };
 
   const removeLineItem = (index: number) => {
-    setFormData({
-      ...formData,
-      line_items: formData.line_items.filter((_, i) => i !== index)
-    });
+    const updatedItems = formData.line_items.filter((_: any, i: number) => i !== index);
+    setFormData({ ...formData, line_items: updatedItems });
   };
 
-  const lineItemsTotal = formData.line_items.reduce((sum, item) => sum + item.total_price, 0);
+  const lineItemsTotal = formData.line_items.reduce(
+    (sum: number, item: any) => sum + (item.quantity * item.unit_price),
+    0
+  );
+
   const costDifference = Math.abs(lineItemsTotal - formData.cost);
   const totalsMatch = costDifference < 0.01;
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Service Line Items</h3>
-        <p className="text-sm text-muted-foreground">
-          Optional - Break down the service into individual parts and labor
+        <h3 className="text-lg font-semibold mb-2">Service Line Items (Optional)</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Break down the service into individual parts and labor charges
         </p>
       </div>
 
       {/* Existing Line Items */}
       {formData.line_items.length > 0 && (
-        <div className="space-y-3">
-          <h4 className="font-medium">Current Line Items</h4>
-          {formData.line_items.map((item, index) => (
-            <Card key={index} className="p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 grid grid-cols-4 gap-3 text-sm">
-                  <div>
-                    <p className="font-medium">{item.description}</p>
-                    {item.part_number && (
-                      <p className="text-xs text-muted-foreground">Part: {item.part_number}</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-muted-foreground">Qty</p>
-                    <p className="font-medium">{item.quantity}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-muted-foreground">Unit Price</p>
-                    <p className="font-medium">${item.unit_price.toFixed(2)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-muted-foreground">Total</p>
-                    <p className="font-semibold">${item.total_price.toFixed(2)}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeLineItem(index)}
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-
-          <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-            <span className="font-semibold">Line Items Total:</span>
-            <span className="text-lg font-bold">${lineItemsTotal.toFixed(2)}</span>
-          </div>
-
-          {!totalsMatch && formData.line_items.length > 0 && (
-            <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-yellow-800">Total Mismatch</p>
-                <p className="text-xs text-yellow-700">
-                  Line items total (${lineItemsTotal.toFixed(2)}) doesn't match service cost (${formData.cost.toFixed(2)})
-                </p>
-              </div>
-            </div>
-          )}
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="text-left p-3 font-semibold">Description</th>
+                <th className="text-right p-3 font-semibold">Qty</th>
+                <th className="text-right p-3 font-semibold">Unit Price</th>
+                <th className="text-right p-3 font-semibold">Total</th>
+                <th className="w-12"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {formData.line_items.map((item: any, index: number) => (
+                <tr key={index} className="border-t">
+                  <td className="p-3">{item.description}</td>
+                  <td className="p-3 text-right">{item.quantity}</td>
+                  <td className="p-3 text-right">${item.unit_price.toFixed(2)}</td>
+                  <td className="p-3 text-right font-semibold">
+                    ${(item.quantity * item.unit_price).toFixed(2)}
+                  </td>
+                  <td className="p-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeLineItem(index)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              <tr className="border-t-2 bg-gray-50">
+                <td colSpan={3} className="p-3 text-right font-semibold">
+                  Line Items Total:
+                </td>
+                <td className="p-3 text-right font-bold text-lg">
+                  ${lineItemsTotal.toFixed(2)}
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* Add New Line Item */}
-      <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-        <h4 className="font-medium">Add Line Item</h4>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="item_description">Description *</Label>
+      {/* Total Validation */}
+      {formData.line_items.length > 0 && (
+        <div className={`p-4 rounded-lg border ${totalsMatch ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+          <div className="flex items-start gap-2">
+            <AlertCircle className={`h-5 w-5 mt-0.5 ${totalsMatch ? 'text-green-600' : 'text-yellow-600'}`} />
+            <div>
+              <p className={`font-semibold ${totalsMatch ? 'text-green-900' : 'text-yellow-900'}`}>
+                {totalsMatch ? 'Totals Match ✓' : 'Totals Do Not Match'}
+              </p>
+              <p className={`text-sm ${totalsMatch ? 'text-green-700' : 'text-yellow-700'}`}>
+                Service Cost: ${formData.cost.toFixed(2)} | Line Items: ${lineItemsTotal.toFixed(2)}
+                {!totalsMatch && ` | Difference: $${costDifference.toFixed(2)}`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Line Item Form */}
+      <div className="border rounded-lg p-4 bg-gray-50">
+        <h4 className="font-semibold mb-3">Add Line Item</h4>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="md:col-span-2">
+            <Label htmlFor="item_description">Description</Label>
             <Input
               id="item_description"
+              placeholder="e.g., Labor, Oil filter, Brake pads"
               value={newItem.description}
               onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-              placeholder="Labor, parts, etc."
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="part_number">Part Number</Label>
+          <div>
+            <Label htmlFor="item_quantity">Quantity</Label>
             <Input
-              id="part_number"
-              value={newItem.part_number}
-              onChange={(e) => setNewItem({ ...newItem, part_number: e.target.value })}
-              placeholder="Optional"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantity *</Label>
-            <Input
-              id="quantity"
+              id="item_quantity"
               type="number"
               min="1"
-              step="1"
               value={newItem.quantity}
               onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="unit_price">Unit Price *</Label>
+          <div>
+            <Label htmlFor="item_price">Unit Price</Label>
             <Input
-              id="unit_price"
+              id="item_price"
               type="number"
-              min="0"
               step="0.01"
+              min="0"
+              placeholder="0.00"
               value={newItem.unit_price || ''}
               onChange={(e) => setNewItem({ ...newItem, unit_price: parseFloat(e.target.value) || 0 })}
-              placeholder="0.00"
             />
           </div>
         </div>
+        <Button
+          onClick={addLineItem}
+          variant="outline"
+          size="sm"
+          className="mt-3"
+          disabled={!newItem.description || newItem.unit_price <= 0}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Item
+        </Button>
+      </div>
 
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-muted-foreground">
-            {newItem.description && newItem.unit_price > 0 ? (
-              <>Total: ${(newItem.quantity * newItem.unit_price).toFixed(2)}</>
-            ) : (
-              'Fill in details to add line item'
-            )}
+      {formData.line_items.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-sm">
+            No line items added yet. You can skip this step if you don't need detailed breakdown.
           </p>
-          <Button
-            onClick={addLineItem}
-            disabled={!newItem.description || newItem.unit_price <= 0}
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Item
-          </Button>
         </div>
-      </div>
-
-      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
-          <strong>Note:</strong> Line items are optional but help with detailed record keeping. 
-          If you skip this step, only the total cost will be recorded.
-        </p>
-      </div>
+      )}
     </div>
   );
 };
