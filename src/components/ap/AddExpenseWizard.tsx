@@ -9,6 +9,7 @@ import { FileText, CreditCard, Fuel, FileCheck, UserCheck, RefreshCw, MoreHorizo
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { VendorInvoiceForm } from "@/components/expenses/VendorInvoiceForm";
 
 interface AddExpenseWizardProps {
   isOpen: boolean;
@@ -396,7 +397,17 @@ export function AddExpenseWizard({ isOpen, onClose, onSuccess, vendors, categori
           </div>
         )}
         
-        {step === 2 && (
+        {step === 2 && expenseType === 'vendor_invoice' && (
+          <VendorInvoiceForm
+            onSuccess={() => {
+              onSuccess();
+              handleClose();
+            }}
+            onCancel={() => setStep(1)}
+          />
+        )}
+        
+        {step === 2 && expenseType !== 'vendor_invoice' && (
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Common Fields */}
             <div className="grid grid-cols-2 gap-4">
