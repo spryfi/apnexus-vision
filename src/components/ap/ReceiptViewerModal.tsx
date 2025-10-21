@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, X, ZoomIn, ZoomOut, RotateCw, RotateCcw, Printer, Maximize2 } from "lucide-react";
-import { useState } from "react";
+import { Download, X, ZoomIn, ZoomOut, RotateCw, RotateCcw, Printer, Maximize2, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
@@ -16,6 +16,15 @@ export function ReceiptViewerModal({ open, onOpenChange, receiptUrl, receiptFile
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [error, setError] = useState(false);
+  
+  // Reset error state when receipt changes or modal opens
+  useEffect(() => {
+    if (open && receiptUrl) {
+      setError(false);
+      setZoom(100);
+      setRotation(0);
+    }
+  }, [open, receiptUrl]);
   
   // Safety checks
   if (!receiptUrl) {
@@ -71,9 +80,17 @@ export function ReceiptViewerModal({ open, onOpenChange, receiptUrl, receiptFile
           <div className="flex items-center justify-between">
             <DialogTitle className="truncate max-w-md">{receiptFileName}</DialogTitle>
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => window.open(receiptUrl, '_blank')}
+                title="Open in New Tab"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
               {!isPdf && (
                 <>
-                  <Button 
+                  <Button
                     variant="outline" 
                     size="icon" 
                     onClick={() => setZoom(Math.min(200, zoom + 25))}
@@ -140,7 +157,17 @@ export function ReceiptViewerModal({ open, onOpenChange, receiptUrl, receiptFile
             <Alert variant="destructive" className="max-w-md">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Failed to load receipt. The file may be corrupted or no longer available.
+                <p className="font-semibold mb-2">Failed to load receipt</p>
+                <p className="text-sm mb-3">The file may be corrupted or no longer available.</p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open(receiptUrl, '_blank')}
+                  className="w-full"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Try opening in new tab
+                </Button>
               </AlertDescription>
             </Alert>
           ) : isPdf ? (
@@ -148,7 +175,10 @@ export function ReceiptViewerModal({ open, onOpenChange, receiptUrl, receiptFile
               src={receiptUrl}
               className="w-full h-full border-0"
               title="Receipt PDF"
-              onError={() => setError(true)}
+              onError={(e) => {
+                console.error('PDF load failed:', receiptUrl);
+                setError(true);
+              }}
             />
           ) : (
             <div className="overflow-auto w-full h-full flex items-center justify-center p-4">
