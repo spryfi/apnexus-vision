@@ -34,6 +34,7 @@ import FleetDocuments from "@/pages/FleetDocuments";
 import FleetAnalytics from "@/pages/FleetAnalytics";
 import Devices from "@/pages/Devices";
 import AdminApprovals from "@/pages/AdminApprovals";
+import AdminAuditLog from "@/pages/AdminAuditLog";
 import AdminAIReview from "@/pages/AdminAIReview";
 import Reminders from "@/pages/Reminders";
 import Categories from "@/pages/Categories";
@@ -90,6 +91,7 @@ const App = () => (
             
             {/* Admin */}
             <Route path="/admin/approvals" element={<Layout><AdminApprovals /></Layout>} />
+            <Route path="/admin/audit-log" element={<Layout><AdminAuditLog /></Layout>} />
             <Route path="/admin/ai-review" element={<Layout><AdminAIReview /></Layout>} />
             <Route path="/reminders" element={<Layout><Reminders /></Layout>} />
             <Route path="/vendors" element={<Layout><Vendors /></Layout>} />

@@ -64,8 +64,9 @@ export default function TaskStatusCards() {
     }
   };
 
-  const getTaskStatus = (tasks: TaskCompletion[], category: string) => {
-    const task = tasks.find(t => t.task_templates.category === category);
+  const getTaskStatus = (tasks: TaskCompletion[] = [], category: string) => {
+    // Defensive: task_templates may be null when the join didn't return a row
+    const task = tasks.find((t) => t.task_templates && t.task_templates.category === category);
     return task?.status || 'pending';
   };
 

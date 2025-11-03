@@ -80,6 +80,7 @@ const navigationGroups: (NavigationItem | NavigationGroup)[] = [
     icon: SettingsIcon,
     items: [
       { name: "Approval Queue", href: "/admin/approvals", icon: SettingsIcon },
+      { name: "Audit Log", href: "/admin/audit-log", icon: SettingsIcon },
       { name: "AI Review", href: "/admin/ai-review", icon: SettingsIcon },
       { name: "Reminders", href: "/reminders", icon: SettingsIcon },
       { name: "Vendors", href: "/vendors", icon: SettingsIcon },
