@@ -101,10 +101,10 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
           odometer_at_service: data.odometer,
           service_provider_vendor_id: null, // Using text provider field instead
           service_description: data.description,
+          service_summary: `${data.provider}: ${data.description}`,
           cost: data.cost,
           receipt_scan_url: receiptUrl,
-          notes: data.notes,
-          created_by: user?.id
+          status: 'Completed'
         })
         .select()
         .single();

@@ -282,6 +282,33 @@ export type Database = {
           },
         ]
       }
+      ap_rooms: {
+        Row: {
+          ap_mac: string
+          area: string | null
+          created_at: string | null
+          floor: string | null
+          id: string
+          room_number: string | null
+        }
+        Insert: {
+          ap_mac: string
+          area?: string | null
+          created_at?: string | null
+          floor?: string | null
+          id?: string
+          room_number?: string | null
+        }
+        Update: {
+          ap_mac?: string
+          area?: string | null
+          created_at?: string | null
+          floor?: string | null
+          id?: string
+          room_number?: string | null
+        }
+        Relationships: []
+      }
       ar_payments: {
         Row: {
           amount: number
@@ -2050,6 +2077,95 @@ export type Database = {
           },
         ]
       }
+      guest_devices: {
+        Row: {
+          created_at: string | null
+          device_mac: string
+          expires_at: string | null
+          id: string
+          ip_address: string | null
+          last_ap_mac: string | null
+          last_ssid: string | null
+          profile_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_mac: string
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_ap_mac?: string | null
+          last_ssid?: string | null
+          profile_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_mac?: string
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_ap_mac?: string | null
+          last_ssid?: string | null
+          profile_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_devices_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_profiles: {
+        Row: {
+          consent_timestamp: string | null
+          consent_version: string | null
+          created_at: string | null
+          email: string | null
+          first_name: string | null
+          how_found_us: string | null
+          how_found_us_other: string | null
+          id: string
+          last_name: string | null
+          marketing_opt_in: boolean | null
+          phone: string | null
+          room_name: string | null
+        }
+        Insert: {
+          consent_timestamp?: string | null
+          consent_version?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          how_found_us?: string | null
+          how_found_us_other?: string | null
+          id?: string
+          last_name?: string | null
+          marketing_opt_in?: boolean | null
+          phone?: string | null
+          room_name?: string | null
+        }
+        Update: {
+          consent_timestamp?: string | null
+          consent_version?: string | null
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          how_found_us?: string | null
+          how_found_us_other?: string | null
+          id?: string
+          last_name?: string | null
+          marketing_opt_in?: boolean | null
+          phone?: string | null
+          room_name?: string | null
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           created_at: string
@@ -3060,8 +3176,11 @@ export type Database = {
       }
       onera_wifi: {
         Row: {
+          ap: string | null
+          client_mac: string | null
           created_at: string
           email: string
+          first_name: string | null
           guest_location: string | null
           how_found_us: string
           how_found_us_other: string | null
@@ -3072,14 +3191,19 @@ export type Database = {
           marketing_opt_in: string
           phone: string | null
           phone_normalized: string | null
+          redirect_url: string | null
           room_name: string
+          ssid: string | null
           submitted_at: string
           ts: string
           user_agent: string | null
         }
         Insert: {
+          ap?: string | null
+          client_mac?: string | null
           created_at?: string
           email: string
+          first_name?: string | null
           guest_location?: string | null
           how_found_us: string
           how_found_us_other?: string | null
@@ -3090,14 +3214,19 @@ export type Database = {
           marketing_opt_in?: string
           phone?: string | null
           phone_normalized?: string | null
+          redirect_url?: string | null
           room_name: string
+          ssid?: string | null
           submitted_at?: string
           ts?: string
           user_agent?: string | null
         }
         Update: {
+          ap?: string | null
+          client_mac?: string | null
           created_at?: string
           email?: string
+          first_name?: string | null
           guest_location?: string | null
           how_found_us?: string
           how_found_us_other?: string | null
@@ -3108,7 +3237,9 @@ export type Database = {
           marketing_opt_in?: string
           phone?: string | null
           phone_normalized?: string | null
+          redirect_url?: string | null
           room_name?: string
+          ssid?: string | null
           submitted_at?: string
           ts?: string
           user_agent?: string | null
@@ -5981,10 +6112,7 @@ export type Database = {
           state: string
         }[]
       }
-      bytea_to_text: {
-        Args: { data: string }
-        Returns: string
-      }
+      bytea_to_text: { Args: { data: string }; Returns: string }
       calculate_pto_balance: {
         Args: { p_employee_id: string; p_leave_type: string }
         Returns: number
@@ -6010,12 +6138,9 @@ export type Database = {
         }
         Returns: string
       }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_role: { Args: never; Returns: string }
       get_records_with_missing_city_state: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           city: string
           id: string
@@ -6024,7 +6149,7 @@ export type Database = {
         }[]
       }
       get_source_file_counts: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           count: number
           source_file: string
@@ -6034,10 +6159,7 @@ export type Database = {
         Args: { user_id?: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
-      get_user_role_from_jwt: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_user_role_from_jwt: { Args: never; Returns: string }
       has_spryfi_role: {
         Args: {
           _role: Database["public"]["Enums"]["spryfi_role"]
@@ -6048,27 +6170,77 @@ export type Database = {
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "http_request"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_delete: {
-        Args:
-          | { content: string; content_type: string; uri: string }
-          | { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_get: {
-        Args: { data: Json; uri: string } | { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
+      http_delete:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_get:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       http_head: {
         Args: { uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       http_header: {
         Args: { field: string; value: string }
         Returns: Database["public"]["CompositeTypes"]["http_header"]
+        SetofOptions: {
+          from: "*"
+          to: "http_header"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       http_list_curlopt: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           curlopt: string
           value: string
@@ -6077,33 +6249,51 @@ export type Database = {
       http_patch: {
         Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_post: {
-        Args:
-          | { content: string; content_type: string; uri: string }
-          | { data: Json; uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
+      http_post:
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       http_put: {
         Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_reset_curlopt: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      http_reset_curlopt: { Args: never; Returns: boolean }
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
       }
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
+      is_current_user_admin: { Args: never; Returns: boolean }
       is_file_already_processed: {
         Args: { file_hash: string }
         Returns: boolean
@@ -6112,22 +6302,26 @@ export type Database = {
         Args: { p_vehicle_id: string }
         Returns: undefined
       }
-      text_to_bytea: {
-        Args: { data: string }
-        Returns: string
-      }
+      text_to_bytea: { Args: { data: string }; Returns: string }
       update_drip_last_seen: {
         Args: { user_email: string }
         Returns: undefined
       }
-      update_leads_with_backfilled_city_state: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      urlencode: {
-        Args: { data: Json } | { string: string } | { string: string }
-        Returns: string
-      }
+      update_leads_with_backfilled_city_state: { Args: never; Returns: number }
+      urlencode:
+        | { Args: { data: Json }; Returns: string }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
     }
     Enums: {
       payment_method:
@@ -6158,7 +6352,7 @@ export type Database = {
         value: string | null
       }
       http_request: {
-        method: unknown | null
+        method: unknown
         uri: string | null
         headers: Database["public"]["CompositeTypes"]["http_header"][] | null
         content_type: string | null
