@@ -39,7 +39,7 @@ export const ServiceDetailsStep = ({ formData, setFormData }: ServiceDetailsStep
         <div>
           <Label htmlFor="odometer" className="flex items-center gap-2">
             <Gauge className="h-4 w-4" />
-            Odometer Reading
+            Odometer at Service <span className="text-red-500">*</span>
           </Label>
           <Input
             id="odometer"
@@ -47,9 +47,10 @@ export const ServiceDetailsStep = ({ formData, setFormData }: ServiceDetailsStep
             placeholder="156932"
             value={formData.odometer || ''}
             onChange={(e) => setFormData({ ...formData, odometer: e.target.value ? parseInt(e.target.value) : null })}
+            required
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Miles at time of service
+            Current mileage at time of service (required)
           </p>
         </div>
       </div>
