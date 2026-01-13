@@ -44,7 +44,15 @@ export const VehicleSelectionStep = ({ formData, setFormData }: VehicleSelection
 
       <RadioGroup
         value={formData.vehicle_id}
-        onValueChange={(value) => setFormData({ ...formData, vehicle_id: value })}
+        onValueChange={(value) => {
+          const selected = vehicles?.find((v: any) => v.id === value);
+          setFormData({
+            ...formData,
+            vehicle_id: value,
+            // Pre-fill odometer from the vehicle record to satisfy DB requirement
+            odometer: selected?.current_odometer ?? formData.odometer ?? null
+          });
+        }}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {vehicles?.map(vehicle => (

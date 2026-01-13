@@ -91,12 +91,32 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
         receiptUrl = publicUrl;
       }
 
-      // Get current user
+      // Get current user (required for RLS-protected writes)
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be signed in to add maintenance records.');
+      }
+
+      // Ensure odometer_at_service is never null (DB column is NOT NULL)
+      let odometerAtService: number | null = data.odometer;
+      if (odometerAtService == null) {
+        const { data: vehicle, error: vehicleError } = await supabase
+          .from('vehicles')
+          .select('current_odometer')
+          .eq('id', data.vehicle_id)
+          .single();
+
+        if (vehicleError) throw vehicleError;
+        odometerAtService = vehicle?.current_odometer ?? null;
+      }
+
+      if (odometerAtService == null) {
+        throw new Error('Please enter an odometer reading (this vehicle has no current odometer on file).');
+      }
 
       // Check if line items total mismatches service cost
       const lineItemsTotal = data.line_items.reduce(
-        (sum, item) => sum + (item.quantity * item.unit_price), 
+        (sum, item) => sum + (item.quantity * item.unit_price),
         0
       );
       const hasTotalsMismatch = data.line_items.length > 0 && Math.abs(lineItemsTotal - data.cost) > 0.01;
@@ -107,7 +127,7 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
         .insert({
           vehicle_id: data.vehicle_id,
           service_date: data.service_date,
-          odometer_at_service: data.odometer,
+          odometer_at_service: odometerAtService,
           service_provider_vendor_id: null, // Using text provider field instead
           service_description: data.description,
           service_summary: `${data.provider}: ${data.description}`,
@@ -150,7 +170,8 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
     },
     onError: (error) => {
       console.error('Error creating maintenance record:', error);
-      toast.error('Failed to create maintenance record. Please try again.');
+      const msg = (error as any)?.message || 'Failed to create maintenance record. Please try again.';
+      toast.error(msg);
     }
   });
 
