@@ -37,6 +37,7 @@ export interface MaintenanceFormData {
   line_items: LineItem[];
   receipt_file: File | null;
   receipt_url: string;
+  totals_mismatch_acknowledged: boolean;
 }
 
 export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: AddMaintenanceWizardProps) => {
@@ -51,7 +52,8 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
     notes: '',
     line_items: [],
     receipt_file: null,
-    receipt_url: ''
+    receipt_url: '',
+    totals_mismatch_acknowledged: false
   });
 
   const queryClient = useQueryClient();
@@ -92,7 +94,14 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Create maintenance record
+      // Check if line items total mismatches service cost
+      const lineItemsTotal = data.line_items.reduce(
+        (sum, item) => sum + (item.quantity * item.unit_price), 
+        0
+      );
+      const hasTotalsMismatch = data.line_items.length > 0 && Math.abs(lineItemsTotal - data.cost) > 0.01;
+
+      // Create maintenance record with flag if totals don't match
       const { data: maintenanceRecord, error: maintenanceError } = await supabase
         .from('maintenance_records')
         .insert({
@@ -104,7 +113,9 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
           service_summary: `${data.provider}: ${data.description}`,
           cost: data.cost,
           receipt_scan_url: receiptUrl,
-          status: 'Completed'
+          status: 'Completed',
+          flagged_for_review: hasTotalsMismatch,
+          flag_reason: hasTotalsMismatch ? `Line items total ($${lineItemsTotal.toFixed(2)}) differs from service cost ($${data.cost.toFixed(2)})` : null
         })
         .select()
         .single();
@@ -155,7 +166,8 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
       notes: '',
       line_items: [],
       receipt_file: null,
-      receipt_url: ''
+      receipt_url: '',
+      totals_mismatch_acknowledged: false
     });
     onClose();
   };
@@ -207,19 +219,8 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
         return true;
       
       case 3:
-        // Step 3: Line items are optional, but if added, validate totals match
-        if (formData.line_items.length > 0) {
-          const lineItemsTotal = formData.line_items.reduce(
-            (sum, item) => sum + (item.quantity * item.unit_price), 
-            0
-          );
-          const costDifference = Math.abs(lineItemsTotal - formData.cost);
-          
-          if (costDifference > 0.01) {
-            toast.error(`Line items total ($${lineItemsTotal.toFixed(2)}) doesn't match service cost ($${formData.cost.toFixed(2)})`);
-            return false;
-          }
-        }
+        // Step 3: Line items are optional - no blocking validation for totals mismatch
+        // The record will be flagged for review if totals don't match
         return true;
       
       case 4:

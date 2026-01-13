@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Trash2, AlertCircle, Info } from "lucide-react";
 
 interface LineItemsStepProps {
   formData: any;
@@ -23,7 +24,8 @@ export const LineItemsStep = ({ formData, setFormData }: LineItemsStepProps) => 
 
     setFormData({
       ...formData,
-      line_items: [...formData.line_items, newItem]
+      line_items: [...formData.line_items, newItem],
+      totals_mismatch_acknowledged: false // Reset acknowledgment when items change
     });
 
     setNewItem({
@@ -35,7 +37,11 @@ export const LineItemsStep = ({ formData, setFormData }: LineItemsStepProps) => 
 
   const removeLineItem = (index: number) => {
     const updatedItems = formData.line_items.filter((_: any, i: number) => i !== index);
-    setFormData({ ...formData, line_items: updatedItems });
+    setFormData({ 
+      ...formData, 
+      line_items: updatedItems,
+      totals_mismatch_acknowledged: false // Reset acknowledgment when items change
+    });
   };
 
   const lineItemsTotal = formData.line_items.reduce(
@@ -45,6 +51,14 @@ export const LineItemsStep = ({ formData, setFormData }: LineItemsStepProps) => 
 
   const costDifference = Math.abs(lineItemsTotal - formData.cost);
   const totalsMatch = costDifference < 0.01;
+  const hasLineItems = formData.line_items.length > 0;
+
+  const handleAcknowledgeMismatch = (checked: boolean) => {
+    setFormData({
+      ...formData,
+      totals_mismatch_acknowledged: checked
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -59,7 +73,7 @@ export const LineItemsStep = ({ formData, setFormData }: LineItemsStepProps) => 
       {formData.line_items.length > 0 && (
         <div className="border rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-100">
+            <thead className="bg-muted">
               <tr>
                 <th className="text-left p-3 font-semibold">Description</th>
                 <th className="text-right p-3 font-semibold">Qty</th>
@@ -82,14 +96,14 @@ export const LineItemsStep = ({ formData, setFormData }: LineItemsStepProps) => 
                       variant="ghost"
                       size="sm"
                       onClick={() => removeLineItem(index)}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </td>
                 </tr>
               ))}
-              <tr className="border-t-2 bg-gray-50">
+              <tr className="border-t-2 bg-muted/50">
                 <td colSpan={3} className="p-3 text-right font-semibold">
                   Line Items Total:
                 </td>
@@ -103,26 +117,53 @@ export const LineItemsStep = ({ formData, setFormData }: LineItemsStepProps) => 
         </div>
       )}
 
-      {/* Total Validation */}
-      {formData.line_items.length > 0 && (
-        <div className={`p-4 rounded-lg border ${totalsMatch ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+      {/* Total Validation / Info Message */}
+      {hasLineItems && (
+        <div className={`p-4 rounded-lg border ${
+          totalsMatch 
+            ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800' 
+            : 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800'
+        }`}>
           <div className="flex items-start gap-2">
-            <AlertCircle className={`h-5 w-5 mt-0.5 ${totalsMatch ? 'text-green-600' : 'text-yellow-600'}`} />
-            <div>
-              <p className={`font-semibold ${totalsMatch ? 'text-green-900' : 'text-yellow-900'}`}>
+            {totalsMatch ? (
+              <AlertCircle className="h-5 w-5 mt-0.5 text-green-600 dark:text-green-400" />
+            ) : (
+              <Info className="h-5 w-5 mt-0.5 text-amber-600 dark:text-amber-400" />
+            )}
+            <div className="flex-1">
+              <p className={`font-semibold ${
+                totalsMatch 
+                  ? 'text-green-900 dark:text-green-100' 
+                  : 'text-amber-900 dark:text-amber-100'
+              }`}>
                 {totalsMatch ? 'Totals Match ✓' : 'Totals Do Not Match'}
               </p>
-              <p className={`text-sm ${totalsMatch ? 'text-green-700' : 'text-yellow-700'}`}>
+              <p className={`text-sm ${
+                totalsMatch 
+                  ? 'text-green-700 dark:text-green-300' 
+                  : 'text-amber-700 dark:text-amber-300'
+              }`}>
                 Service Cost: ${formData.cost.toFixed(2)} | Line Items: ${lineItemsTotal.toFixed(2)}
                 {!totalsMatch && ` | Difference: $${costDifference.toFixed(2)}`}
               </p>
+              
+              {!totalsMatch && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    Please double-check your line items. If the difference is intentional (e.g., taxes, fees, or discounts not itemized), you can continue.
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    This record will be flagged for review so you can reconcile it later.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Add New Line Item Form */}
-      <div className="border rounded-lg p-4 bg-gray-50">
+      <div className="border rounded-lg p-4 bg-muted/30">
         <h4 className="font-semibold mb-3">Add Line Item</h4>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="md:col-span-2">
