@@ -237,6 +237,10 @@ export const AddMaintenanceWizard = ({ isOpen, onClose, preselectedVehicleId }: 
           toast.error('Cost must be greater than zero');
           return false;
         }
+        if (!formData.odometer || formData.odometer <= 0) {
+          toast.error('Odometer reading at service is required - please enter the current mileage');
+          return false;
+        }
         return true;
       
       case 3:
